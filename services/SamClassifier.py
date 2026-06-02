@@ -5,9 +5,7 @@ from datetime import datetime
 class SAMClassifier:
     def __init__(self):
 
-        base_dir = os.path.dirname(__file__)  # folder of SamClassifier.py
-
-        who_dir = os.path.join(base_dir, "WHO_data")
+        who_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "WHO_data")
 
         self.tables = {
 

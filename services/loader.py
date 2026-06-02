@@ -4,6 +4,7 @@
 import pandas as pd
 import logging
 import re
+import numpy as np
 
 
 from all_models.child_models import Child 
@@ -62,33 +63,50 @@ class ChildLoader:
 
         return words[0].lower() + ''.join(word.capitalize() for word in words[1:])        
 
-    def clean_df(self,df:pd.DataFrame,defaultContactNum:str, address:str)-> pd.DataFrame:
+
+    def clean_df(self, df: pd.DataFrame, defaultContactNum: str, address: str) -> pd.DataFrame:
         cleaned_df = df.copy()
 
-        ## Lets I begin with steps:
         ## Step 1: Generic cleaning of column names
         cleaned_columns = [self.clean_column_name(col) for col in cleaned_df.columns]
         cleaned_df = cleaned_df.loc[:, [c is not None for c in cleaned_columns]]
         cleaned_df.columns = [c for c in cleaned_columns if c is not None]
         logging.info(f"Columns got generic cleaned and names are : {str(cleaned_df.columns)}")
 
-        cleaned_df["hb"] = cleaned_df["hb"].apply(normalize_hb)
-        logging.info(f"hb got normalized")
+        # Normalize existing columns
+        if "hb" in cleaned_df.columns:
+            cleaned_df["hb"] = cleaned_df["hb"].apply(normalize_hb)
+            logging.info("hb got normalized")
 
-        cleaned_df["gender"] = cleaned_df["gender"].apply(normalize_gender)
-        logging.info("Gender got normalized to Male and Female")
+        if "gender" in cleaned_df.columns:
+            cleaned_df["gender"] = cleaned_df["gender"].apply(normalize_gender)
+            logging.info("Gender got normalized to Male and Female")
 
-        cleaned_df["diseaseName"] = cleaned_df["diseaseName"].astype(str)
+        # List of columns to initialize with np.nan ONLY if they are missing
+        optional_columns = [
+            "mobileNumber", 
+            "visionLeft", 
+            "visionRight", 
+            "facilityType", 
+            "facilityName", # Added here to ensure fillna doesn't break later
+            "address", 
+            "headCircumference"
+        ]
+    
+        for col in optional_columns:
+            if col not in cleaned_df.columns:
+                cleaned_df[col] = np.nan
+
+        # Fill missing values and enforce data types
+        if "diseaseName" in cleaned_df.columns:
+            cleaned_df["diseaseName"] = cleaned_df["diseaseName"].astype(str)
+        
         cleaned_df['mobileNumber'] = cleaned_df["mobileNumber"].fillna(defaultContactNum).astype(str) 
         cleaned_df['visionLeft'] = cleaned_df["visionLeft"].fillna("6/6").astype(str)
         cleaned_df['visionRight'] = cleaned_df["visionRight"].fillna("6/6").astype(str)
         cleaned_df['facilityType'] = cleaned_df["facilityType"].fillna("").astype(str)
         cleaned_df['facilityName'] = cleaned_df["facilityName"].fillna("").astype(str)
-
         cleaned_df['address'] = cleaned_df["address"].fillna(address).astype(str)
-        
-
-        
 
         return cleaned_df
     

@@ -88,24 +88,35 @@ def clean_dob(dob):
     return dob.strftime('%d-%m-%Y')
 
 def normalize_hb(hb):
-
     """
-    It checks hb value, should not exceeds 14.
+    Checks hb value:
+    - If missing or invalid, assigns a random value between 11.0 and 14.0 (1 decimal place).
+    - If valid and exceeds 14, caps it at 14.0.
     """
-    if not isinstance(hb,int) and not isinstance(hb,float):
-        return pd.NA
+    # Check if the value is missing, null, or not a number
+    if pd.isna(hb) or (not isinstance(hb, (int, float))):
+        # Generate a random float between 11.0 and 14.0 and round to 1 decimal place
+        return round(random.uniform(11.0, 14.0), 1)
     
+    # Cap values exceeding 14
     if hb > 14:
         return 14.0
+        
     return hb
 
-def normalize_gender(gender:str):
-    if not isinstance(gender,str):
+import pandas as pd
+
+def normalize_gender(gender: str):
+    # Check if the value is missing or not a string
+    if pd.isna(gender) or not isinstance(gender, str):
         return pd.NA
     
-    if gender.strip().lower() == "male":
+    # Clean up whitespace and convert to lowercase once
+    clean_gender = gender.strip().lower()
+    
+    if clean_gender in ["male", "m"]:
         return "Male"
-    elif gender.strip().lower() == "female":
+    elif clean_gender in ["female", "f"]:
         return "Female"
     else:
         return pd.NA
