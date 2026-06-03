@@ -5,7 +5,9 @@ import json
 from datetime import datetime
 from typing import Optional
 
-from utils.routerUtils import append_log, run_screening_workflow
+from utils.routerUtils import append_log, launch_browser_job
+from services.JobManager import JobManager
+from services.RuntimeManager import RunTimeManager
 
 router = APIRouter()
 
@@ -49,39 +51,15 @@ async def create_job(
             detail="File is required"
         )
 
-    # Step 1 : create a job_id using uuid 
-    job_id = str(uuid.uuid4())
-    ## Step 2: create the folder like this inside 'jobs'(existing folder) as jobs/job_id/ and save that file here. It will be a csv file
-    job_dir = Path("jobs") / job_id
-    job_dir.mkdir(exist_ok=True,parents=True)
+    ## Create the job
+    jobManager = JobManager(address=address,mobileNumber=mobileNumber,file=file)
+    job_id = await jobManager.create_job()
 
-    ## Saving the uploaded file
-    uploaded_file_path = job_dir / "uploaded.csv"
-    file_bytes = await file.read()
-    with open(uploaded_file_path, "wb") as f:
-        f.write(file_bytes)
-
-
-
-    ## Step 3: Append job.json file with this job in that same dir
-    job_metadata = {
-        "job_id": job_id,
-        "status": "waiting_login",
-        "created_at": datetime.utcnow().isoformat(),
-        "address": address,
-        "mobile_number": mobileNumber,
-        "uploaded_file": "uploaded.csv",
-    }
-    
-    with open(job_dir / "job.json", "w", encoding="utf-8") as f:
-        json.dump(job_metadata, f, indent=2)
-
-    ## Step 4: Inside that same folder make a Logs.txt file for that job, and save logs there for this job. I don't know how to do it.
-    append_log(job_dir, "Successfully created job metadata. Starting browser workflow.")
-    
-
-    ## Step 5: Start a browser instance in playwright, I mean give it to a background task, and return response to user.
-    background_tasks.add_task(run_screening_workflow, job_id, job_dir)
+    ## Launching browser
+    background_tasks.add_task(
+    launch_browser_job,
+    job_id
+    )
     
     return {
         "job_id": job_id
