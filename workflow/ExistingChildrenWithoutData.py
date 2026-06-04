@@ -121,7 +121,7 @@ class ExistingChildrenWithoutData:
         for child in existingChildrenList:
             logging.info(f"Checking eligibility of {child.name} with age {get_age(child.dob)}, and start screeining as {child.isStartScreeningButtonPresent}")
             age = get_age(child.dob)
-            if age < 5 and child.isStartScreeningButtonPresent:
+            if age < 6 and child.isStartScreeningButtonPresent:
                 eligibleChildren.append(child)
 
         

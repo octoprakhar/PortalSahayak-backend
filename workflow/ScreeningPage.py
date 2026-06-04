@@ -146,18 +146,31 @@ class ChildScreeningPage:
     def insertHealthReport(self):
         heightField = self.page.locator('[name="height"]')
         weightField = self.page.locator('[name="weight"]')
-        headCircumField = self.page.locator('[name="headCircumference"]')
         hbField = self.page.locator('[name="hb"]')
         
 
         heightField.fill(self.child.height)
         weightField.fill(self.child.weight)
-        headCircumField.fill(self.child.headCircumference)
         hbField.fill(self.child.hb)
 
-        if round(self.age,1) >= 0.6:
+        if round(self.age,2) <= 5:
+            headCircumField = self.page.locator('[name="headCircumference"]')
+            headCircumField.fill(self.child.headCircumference)
+
+        if round(self.age,1) >= 0.6 and round(self.age,2) <= 5:
             muacFIeld = self.page.locator('[name="muac"]')
             muacFIeld.fill("13")
+
+        if round(self.age,2) > 5:
+            # Fill vision Left
+            self.page.locator('select[name="visionLeft"]').select_option(
+                label=str(self.child.visionLeft)
+            )
+
+            # Fill vision Right
+            self.page.locator('select[name="visionRight"]').select_option(
+                label=str(self.child.visionRight)
+            )
 
         ## Any disease selection
         disease_name = self.child.diseaseName
@@ -263,6 +276,17 @@ class ChildScreeningPage:
 
         editChildButton.click()
 
+        ## Check if target of students are completed then just press 'Yes proceed button automatically'
+        
+        message = self.page.get_by_text(
+            "Planned children for this institution have been screened. Do you want to screen more?",
+            exact=True
+        )
+
+        if message.is_visible():
+            self.page.get_by_role("button", name="Yes, proceed!").click()
+            
+
         self.page.wait_for_load_state("networkidle")
 
         self.insertHealthReport()
@@ -296,7 +320,12 @@ class ChildScreeningPage:
 
     def submit(self):
 
+        ## If child is above 6years and It is awc don't enter here
+        if self.age > 6:
+            logging.info(f"📢📢 Got child of name: {self.child.name} has age greater than 6 and we are doing AWC so leaving.")
+            return
         ## Add child's personal detail and then add it's health report of each child, and then go
+
 
         ## For each child
         try:

@@ -93,6 +93,8 @@ class ChildFactory:
             hb=str(hb),
             headCircumference=str(headCircumference),
             facilityType=facilityType,
-            facilityName=facilityName 
+            facilityName=facilityName,
+            visionLeft="6/6",
+            visionRight="6/6"
 
         )
