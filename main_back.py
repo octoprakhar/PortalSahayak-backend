@@ -20,7 +20,7 @@ with sync_playwright() as p:
     input("Login manually and press enter....")
     page.locator('[title="Screening"]').click()
     page.wait_for_timeout(5000)
-    page.locator('[name="financialMonth"]').select_option(label="May 2026")
+    page.locator('[name="financialMonth"]').select_option(label="June 2026")
     page.get_by_role('button',name='Search').click()
     page.wait_for_load_state('networkidle')
     page.wait_for_timeout(5000)
@@ -28,7 +28,7 @@ with sync_playwright() as p:
     
     #Adding new child now
     screeningWorkflow = ScreeningWorkflow(page=page)
-    screeningWorkflow.run("./AWCBaihatiku.csv","8989583571","Baihatiku")
+    screeningWorkflow.run("./AWC1Labada.csv","8120954660","Lavada")
 
 
     input("Press enter to close")

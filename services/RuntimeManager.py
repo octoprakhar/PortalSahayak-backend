@@ -1,5 +1,6 @@
 from playwright.sync_api import Page,sync_playwright
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from constants.job_status import JobStatus
 from services.JobManager import JobManager
@@ -42,7 +43,9 @@ class RunTimeManager:
 
         ActiveJobStore.add_job(job_id=self.job_id, playwright=p,browser=browser,context=context, page=page)
         JobManager.update_job_status(status=JobStatus.WAITING_LOGIN, job_id=self.job_id)
-        JobManager.add_log(job_id=self.job_id, log=JobLog(timeStamp=datetime.utcnow().isoformat(),message="Browser opened and login page loaded",type=LogType.SUCCESS))
+        JobManager.add_log(job_id=self.job_id, log=JobLog(timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),message="Browser opened and login page loaded",type=LogType.SUCCESS))
 
         return RuntimeJob(playwright=p, browser=browser, context=context,page=page)
             
@@ -50,7 +53,7 @@ class RunTimeManager:
 
 
 
-    def start_select_institution_stage(self, page:Page, month: str) -> Page:
+    def start_select_institution_stage(self):
         """
         It will help the user to open the "Select Institution" screen using month which will be of type like this "May 2026".
         Update the job status to JobStataus.WAITING_INSTITUTION
@@ -58,7 +61,107 @@ class RunTimeManager:
         I don't think in future, user will use in memory cache to give the page instance by intself when api is called, so later it may not 
         be very useful
         """
-        pass
+        runtime_job = ActiveJobStore.get_job(job_id=self.job_id)
+
+        if runtime_job is None:
+            raise ValueError(f"Job {self.job_id} not found")
+        
+        page = runtime_job.page
+        current_url = page.url
+
+        # -----------------------------
+        # Page diagnostics
+        # -----------------------------
+        JobManager.add_log(
+            job_id=self.job_id,
+            log=JobLog(
+                timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
+                message=f"Main page URL: {page.url}",
+                type=LogType.INFO
+            )
+        )
+
+        JobManager.add_log(
+            job_id=self.job_id,
+            log=JobLog(
+                timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
+                message=f"Number of browser pages: {len(page.context.pages)}",
+                type=LogType.INFO
+            )
+        )
+
+        for i, p in enumerate(page.context.pages):
+            JobManager.add_log(
+                job_id=self.job_id,
+                log=JobLog(
+                    timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
+                    message=f"Browser Page {i}: {p.url}",
+                    type=LogType.INFO
+                )
+            )
+
+        # -----------------------------
+        # Frame diagnostics
+        # -----------------------------
+        JobManager.add_log(
+            job_id=self.job_id,
+            log=JobLog(
+                timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
+                message=f"Number of frames: {len(page.frames)}",
+                type=LogType.INFO
+            )
+        )
+
+        for i, frame in enumerate(page.frames):
+            JobManager.add_log(
+                job_id=self.job_id,
+                log=JobLog(
+                    timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
+                    message=f"Frame {i}: {frame.url}",
+                    type=LogType.INFO
+                )
+            )
+        page.screenshot(path=f"debug_{self.job_id}.png")
+
+        if "/login" in current_url:
+
+            JobManager.add_log(
+                job_id=self.job_id,
+                log=JobLog(
+                    timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
+                    message=f"Current URL: {current_url}",
+                    type=LogType.INFO
+                )
+            )
+            JobManager.add_log(
+                job_id=self.job_id,
+                log=JobLog(
+                    timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),
+                    message="User is not logged in. Please login and retry.",
+                    type=LogType.ERROR
+                )
+            )
+            return
+
+        ## Verify first that user has logged in or not, if not send user an error log of failing and ask for retry
+
+        try:
+            month = JobManager.get_screening_month(self.job_id)
+        except Exception as e:
+            raise RuntimeError(e.message)
+        
+        page.locator('[title="Screening"]').click()
+        page.wait_for_timeout(5000)
+        page.locator('[name="financialMonth"]').select_option(label=month)
+        page.get_by_role('button',name='Search').click()
+        JobManager.add_log(job_id=self.job_id, log=JobLog(timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),message="Successfully opened the institution page, Waiting for user to select institution",type=LogType.SUCCESS))
+
+        ## Update the status
+        JobManager.update_job_status(status=JobStatus.WAITING_INSTITUTION,job_id=self.job_id)
+        JobManager.add_log(job_id=self.job_id, log=JobLog(timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),message="Waiting for user to select the intitution"))
+        
 
     def start_child_screening(self, page:Page) -> Page:
         """

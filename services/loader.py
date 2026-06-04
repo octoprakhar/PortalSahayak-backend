@@ -82,6 +82,18 @@ class ChildLoader:
             cleaned_df["gender"] = cleaned_df["gender"].apply(normalize_gender)
             logging.info("Gender got normalized to Male and Female")
 
+        
+        numeric_cols = [
+            'weight',
+            'height',
+        ]
+
+        for col in numeric_cols:
+            cleaned_df[col] = pd.to_numeric(
+                cleaned_df[col],
+                errors='coerce'
+            ).astype(float)
+
         # List of columns to initialize with np.nan ONLY if they are missing
         optional_columns = [
             "mobileNumber", 
@@ -92,6 +104,7 @@ class ChildLoader:
             "address", 
             "headCircumference"
         ]
+
     
         for col in optional_columns:
             if col not in cleaned_df.columns:
@@ -199,6 +212,8 @@ class ChildLoader:
                 headCircumference=str(row.get("headCircumference")),
                 facilityType=str(row.get("facilityType")),
                 facilityName=str(row.get("facilityName")),
+                visionRight=str(row.get("visionRight")),
+                visionLeft=str(row.get("visionLeft"))
             )
             # logging.info(f"Created child like: {str(child)}")
 #             logging.info(

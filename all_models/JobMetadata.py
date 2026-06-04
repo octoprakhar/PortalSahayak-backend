@@ -9,4 +9,5 @@ class JobMetadata:
     created_at : str
     address: str
     mobile_number: str
+    month: str
     uploaded_file: str = "uploaded.csv"

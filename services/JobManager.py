@@ -2,9 +2,11 @@ import uuid
 from pathlib import Path
 from datetime import datetime
 from fastapi import UploadFile
+from zoneinfo import ZoneInfo
 import json
 from dataclasses import asdict
 import shutil
+from typing import Optional
 
 from constants.job_status import JobStatus
 from constants.log_type import LogType
@@ -17,7 +19,7 @@ class JobManager:
     """
     This class helps with doing CRUD operations across a particular job. It only does persistant work
     """
-    def __init__(self, address: str, mobileNumber: str, file: UploadFile):
+    def __init__(self, address: str, mobileNumber: str, file: UploadFile, month: str):
         
         """
         It will initiate the JobManager class, with given address, mobileNumber, 
@@ -27,6 +29,7 @@ class JobManager:
 
         self.address = address
         self.mobileNumber = mobileNumber
+        self.month = month
         self.file = file
 
     async def create_job(self) -> str:
@@ -60,12 +63,14 @@ class JobManager:
             raise RuntimeError("Can't create the file that is uploaded by the user") from e
 
         ## Now making the file to store persistant data regarding job
-        job_metadata = JobMetadata(job_id=job_id, status=JobStatus.IDLE.value, created_at=datetime.utcnow().isoformat(), address=self.address, mobile_number=self.mobileNumber)
+        job_metadata = JobMetadata(job_id=job_id, status=JobStatus.IDLE.value, created_at=datetime.utcnow().isoformat(), address=self.address, mobile_number=self.mobileNumber,month=self.month)
         with open(job_dir / "job.json", "w", encoding="utf-8") as f:
             json.dump(asdict(job_metadata), f, indent=2)
 
         ## Now create a log file, with appended log as 'job created', for which I will append a log after that
-        self.add_log(job_id=job_id, log=JobLog(timeStamp=datetime.utcnow().isoformat(), message=f"Created the job with id: {job_id} successfully.", type=LogType.SUCCESS))
+        self.add_log(job_id=job_id, log=JobLog(timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(), message=f"Created the job with id: {job_id} successfully.", type=LogType.SUCCESS))
 
         return job_id
 
@@ -95,27 +100,42 @@ class JobManager:
             with open(job_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
 
-            JobManager.add_log(job_id, JobLog(timeStamp=datetime.utcnow().isoformat(),message=f"Updated the Job status of {job_id} to {status}"))
+            JobManager.add_log(job_id, JobLog(timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),message=f"Updated the Job status of {job_id} to {status}"))
 
             return True
         except Exception as e:
             raise RuntimeError("Error while updating status") from e
 
     @staticmethod
-    def get_logs(job_id: str) -> list[JobLog]:
+    def get_logs(job_id: str, after: Optional[str] = None) -> list[JobLog]:
         """
-        Return all the logs that are saved for this particular job to return them as a string
+
+        Return all the logs that are saved for this particular job and is after a particular time
+
         
+
         Parameter:
+
         job_id : str => Id of the job you want to get the logs
+        after: str = Time stamp after which we want the logs
+
+
 
         Returns:
+
         list[JobLogs] => ALl the logs, with it's types, message and timestamp
+
         """
         log_file = Path("jobs") / job_id / "logs.jsonl"
 
         if not log_file.exists():
             return []
+
+        after_dt = None
+        if after:
+            after_dt = datetime.fromisoformat(after)
 
         logs: list[JobLog] = []
 
@@ -128,15 +148,21 @@ class JobManager:
 
                 data = json.loads(line)
 
+                if after_dt:
+                    log_dt = datetime.fromisoformat(data["timeStamp"])
+
+                    if log_dt <= after_dt:
+                        continue
+
                 logs.append(
                     JobLog(
                         timeStamp=data["timeStamp"],
                         message=data["message"],
-                        type=LogType[data["type"]]
+                        type=LogType[data["type"]],
                     )
                 )
 
-        return logs
+            return logs
 
     @staticmethod
     def add_log(job_id: str, log: JobLog) -> JobLog:
@@ -197,6 +223,36 @@ class JobManager:
                 f"Invalid status '{data.get('status')}' for job {job_id}"
             ) from e
         
+
+    @staticmethod
+    def get_screening_month(job_id: str) -> str:
+        """
+        Returns the screening month of the given job.
+
+        Parameters:
+        job_id : str
+            ID of the job.
+
+        Returns:
+        str
+            Screening month (e.g. "May 2026").
+        """
+
+        job_file = Path("jobs") / job_id / "job.json"
+
+        if not job_file.exists():
+            raise FileNotFoundError(f"Job {job_id} does not exist")
+
+        try:
+            with open(job_file, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            return data["month"]
+
+        except KeyError as e:
+            raise RuntimeError(
+                f"Month field missing in metadata for job {job_id}"
+            ) from e
 
 
     @staticmethod
