@@ -1,6 +1,7 @@
 from playwright.sync_api import Page,sync_playwright
 from datetime import datetime
 from zoneinfo import ZoneInfo
+from pathlib import Path
 
 from constants.job_status import JobStatus
 from services.JobManager import JobManager
@@ -8,6 +9,7 @@ from all_models.JobLogs import JobLog
 from constants.log_type import LogType
 from services.ActiveJobStore import ActiveJobStore
 from all_models.RuntimeJob import RuntimeJob
+from workflow.workflow import ScreeningWorkflow
 
 
 class RunTimeManager:
@@ -106,11 +108,131 @@ class RunTimeManager:
         JobManager.add_log(job_id=self.job_id, log=JobLog(timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),message="Waiting for user to select the intitution"))
         
 
-    def start_child_screening(self, page:Page) -> Page:
+    def start_child_screening(self):
         """
         It will Trigger ChildScreening class to start screening, and change the job status to "RUNNING"
         
         """
-        pass
+        ## Check first whether a person has selected the institution by check "Add New Child" Button is present on the screen or not.
+        runtime_job = ActiveJobStore.get_job(job_id=self.job_id)
+
+        if runtime_job is None:
+            raise ValueError(f"Job {self.job_id} not found")
+        
+        page:Page = runtime_job.page
+
+        try:
+            page.get_by_role('button',name="Add New Child").wait_for(
+                state="visible",
+                timeout=3000
+            )
+        except Exception:
+            JobManager.add_log(
+                job_id=self.job_id,
+                log=JobLog(
+                    timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),
+                    message="Institution is not selected please select the institution",
+                    type=LogType.ERROR
+                )
+            )
+            return
+        
+        try:
+            
+            ## Get the file path of the .csv uploaded
+            csv_file = JobManager.get_uploaded_file_path(self.job_id)
+
+            ## Get address and phone number
+            metadata = JobManager.get_job_metadata(self.job_id)
+            address = metadata.address
+            mobileNumber = metadata.mobile_number
+
+            JobManager.add_log(
+                job_id=self.job_id,
+                log=JobLog(
+                    timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),
+                    message="Got required data.... Starting to run the job",
+                    type=LogType.INFO
+                )
+            )
+            JobManager.update_job_status(JobStatus.RUNNING,self.job_id)
+
+
+
+        except Exception as e:
+            ## Moving to failed as I can't do anything for that, user needs to retry again from start
+            JobManager.add_log(
+                job_id=self.job_id,
+                log=JobLog(
+                    timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),
+                    message="Cannot get required data for the job to start. Please retry again moving the job to failed.",
+                    type=LogType.ERROR
+                )
+            )
+            JobManager.update_job_status(JobStatus.FAILED,self.job_id)
+
+            ## TODO Cleanup of job is required
+            ## Runtime data
+            ActiveJobStore.remove_job(job_id=self.job_id)
+            ## Persistant data
+            JobManager.clean_job(job_id=self.job_id)
+            return
+
+        ## Start Screening Workflow with all the data
+        try:
+            screeningWorkFLow: ScreeningWorkflow = ScreeningWorkflow(page=page)
+        
+            screeningWorkFLow.run(csv_file,mobileNumber,address)
+            JobManager.add_log(
+                job_id=self.job_id,
+                log=JobLog(
+                    timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),
+                    message="Completed the JOB Succesfully 🎉🎉🎉🎉.",
+                    type=LogType.SUCCESS
+                )
+            )
+            
+            ## Put job status as completed
+            JobManager.update_job_status(JobStatus.COMPLETED, job_id=self.job_id)
+
+            ## Remove job from active job
+            ActiveJobStore.remove_job(job_id=self.job_id)
+            
+
+        except Exception as e:
+            ## Moving to failed as I can't do anything for that, user needs to retry again from start
+            JobManager.add_log(
+                job_id=self.job_id,
+                log=JobLog(
+                    timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),
+                    message="Error while running the job. Please retry by closing everying.",
+                    type=LogType.ERROR
+                )
+            )
+            JobManager.update_job_status(JobStatus.FAILED,self.job_id)
+            ## TODO job cleanup is required
+            ## Runtime data
+            ActiveJobStore.remove_job(job_id=self.job_id)
+            ## Persistant data
+            JobManager.clean_job(job_id=self.job_id)
+            return
+        
+
+        
+            
+        
+        
+
+
 
 

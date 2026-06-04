@@ -189,6 +189,41 @@ class JobManager:
         return log
     
     @staticmethod
+    def get_uploaded_file_path(job_id: str) -> Path:
+        """
+        Returns uploaded file path, so that we can run the job
+
+        Params: 
+        job_id: str => job id whose file you want
+
+        Returns: 
+        path: Path = file path of the data
+        """
+        return Path("jobs") / job_id / "uploaded.csv"
+    
+    @staticmethod
+    def get_job_metadata(job_id: str) -> JobMetadata:
+        """
+        This function returns the metadata related to job, so that we can get small things about the jobs
+
+        Params:
+        job_id: str => job id of the job you want the metadata of.
+
+        Returns:
+        jobMetadata: JobMetadata => All metadata related to the job
+        """
+
+        job_file = Path("jobs") / job_id / "job.json"
+
+        if not job_file.exists():
+            raise FileNotFoundError(f"Job {job_id} does not exist")
+
+        with open(job_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        return JobMetadata(**data)
+    
+    @staticmethod
     def get_current_status(job_id: str) -> JobStatus:
         """
         Returns the current status of the given job.

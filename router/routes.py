@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 from typing import Optional
 
-from utils.routerUtils import append_log, launch_browser_job, open_institution_page
+from utils.routerUtils import append_log, launch_browser_job, open_institution_page,start_child_screening
 from services.JobManager import JobManager
 from services.RuntimeManager import RunTimeManager
 from constants.job_status import JobStatus
@@ -100,7 +100,6 @@ def get_institutions_list(background_task: BackgroundTasks,job_id: Optional[str]
     """
     Request:
     job_id: str
-    month: str = format will be "May 2026" likes that.
 
     Response:
     status: ok
@@ -114,7 +113,31 @@ def get_institutions_list(background_task: BackgroundTasks,job_id: Optional[str]
         )
 
     try:
-        open_institution_page(job_id=job_id)
+        background_task.add_task(open_institution_page,job_id)
+        return {"status":"ok"}
+    except Exception as e:
+        return {"error":e.message}
+
+
+@router.post("/start-screening")
+def start_job_screeninhg(background_task: BackgroundTasks,job_id: Optional[str] = Form(None)):
+    """
+    Request:
+    job_id: str
+
+    Response:
+    status: ok
+    error: Nullable str
+    """
+    ## Validate data
+    if not job_id or not job_id.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Job ID is required"
+        )
+
+    try:
+        background_task.add_task(start_child_screening,job_id)
         return {"status":"ok"}
     except Exception as e:
         return {"error":e.message}

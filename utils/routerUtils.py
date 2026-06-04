@@ -17,3 +17,7 @@ def launch_browser_job(job_id:str):
 def open_institution_page(job_id: str):
     runtime_manager = RunTimeManager(job_id=job_id)
     runtime_manager.start_select_institution_stage()
+
+def start_child_screening(job_id: str):
+    runtime_manager = RunTimeManager(job_id=job_id)
+    runtime_manager.start_child_screening()

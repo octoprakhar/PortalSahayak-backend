@@ -1,7 +1,12 @@
 from fastapi import FastAPI
 from router.routes import router
 from fastapi.middleware.cors import CORSMiddleware
+import logging
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
+)
 
 app = FastAPI()
 

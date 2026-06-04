@@ -258,7 +258,7 @@ def standardize_facility(df, classifier, n=3):
 
                 sam_count += 1
 
-                logging.info(f"🧐🧐💣 Student with name : {row["name"]} is found to be SAM, and not going to change, because less than SAM count.")
+                logging.info(f"🧐🧐💣 Student with name : {row['name']} is found to be SAM, and not going to change, because less than SAM count.")
 
             # REMAINING SAM -> MODIFY VALUES + CHC
             else:
