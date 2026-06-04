@@ -146,7 +146,7 @@ class ChildLoader:
 
         ## Mapping faculty name with DEIC, NRC, CHC(default)
         samClassifier = SAMClassifier()
-        trans_df = standardize_facility(trans_df,samClassifier,1)
+        trans_df = standardize_facility(trans_df,samClassifier,2)
         logging.info("Facilities got mapped wrt facility Name")
         logging.info(
     f"💣💣 Got number of SAM students as {trans_df[trans_df['facilityType']=='NRC'].shape[0]}"

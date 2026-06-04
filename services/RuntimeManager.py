@@ -66,73 +66,16 @@ class RunTimeManager:
         if runtime_job is None:
             raise ValueError(f"Job {self.job_id} not found")
         
-        page = runtime_job.page
-        current_url = page.url
+        page:Page = runtime_job.page
 
-        # -----------------------------
-        # Page diagnostics
-        # -----------------------------
-        JobManager.add_log(
-            job_id=self.job_id,
-            log=JobLog(
-                timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
-                message=f"Main page URL: {page.url}",
-                type=LogType.INFO
+        screening = page.locator('[title="Screening"]').wait_for(timeout=3000)
+
+        try:
+            page.locator('[title="Screening"]').wait_for(
+                state="visible",
+                timeout=3000
             )
-        )
-
-        JobManager.add_log(
-            job_id=self.job_id,
-            log=JobLog(
-                timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
-                message=f"Number of browser pages: {len(page.context.pages)}",
-                type=LogType.INFO
-            )
-        )
-
-        for i, p in enumerate(page.context.pages):
-            JobManager.add_log(
-                job_id=self.job_id,
-                log=JobLog(
-                    timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
-                    message=f"Browser Page {i}: {p.url}",
-                    type=LogType.INFO
-                )
-            )
-
-        # -----------------------------
-        # Frame diagnostics
-        # -----------------------------
-        JobManager.add_log(
-            job_id=self.job_id,
-            log=JobLog(
-                timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
-                message=f"Number of frames: {len(page.frames)}",
-                type=LogType.INFO
-            )
-        )
-
-        for i, frame in enumerate(page.frames):
-            JobManager.add_log(
-                job_id=self.job_id,
-                log=JobLog(
-                    timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
-                    message=f"Frame {i}: {frame.url}",
-                    type=LogType.INFO
-                )
-            )
-        page.screenshot(path=f"debug_{self.job_id}.png")
-
-        if "/login" in current_url:
-
-            JobManager.add_log(
-                job_id=self.job_id,
-                log=JobLog(
-                    timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),
-                    message=f"Current URL: {current_url}",
-                    type=LogType.INFO
-                )
-            )
+        except Exception:
             JobManager.add_log(
                 job_id=self.job_id,
                 log=JobLog(
