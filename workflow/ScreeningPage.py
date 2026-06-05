@@ -208,39 +208,44 @@ class ChildScreeningPage:
         finalSubmitBtn.click()
 
     def saveExistingChild(self, existingChildLocator: Locator = None):
-
         """
-        It saves the existing child, if you give no locator, we will take self.child details and then try getting that child from table 
+        Saves the existing child.
+        If no locator is provided, locate the row using self.child details.
         """
 
         if existingChildLocator is None:
-            ## Use self.child to get the details
-            rows = self.page.locator("table > tbody > tr")
 
-            editChildButton = None
+            # Build header -> column index map
+            headers = self.page.locator("table thead th")
+
+            column_map = {
+                headers.nth(i).inner_text().strip(): i
+                for i in range(headers.count())
+            }
+
+            rows = self.page.locator("table tbody tr")
 
             target_name = self.child.name.strip().lower()
             target_father = self.child.fatherName.strip().lower()
 
+            editChildButton = None
+
             for i in range(rows.count()):
 
                 row = rows.nth(i)
+                cells = row.locator("td")
 
-                name = (
-                    row.locator("td")
-                    .nth(2)
-                    .inner_text()
-                    .strip()
-                    .lower()
-                )
+                def get_cell(header_name: str) -> str:
+                    return (
+                        cells
+                        .nth(column_map[header_name])
+                        .inner_text()
+                        .strip()
+                        .lower()
+                    )
 
-                father_name = (
-                    row.locator("td")
-                    .nth(6)
-                    .inner_text()
-                    .strip()
-                    .lower()
-                )
+                name = get_cell("Name")
+                father_name = get_cell("Father's Name")
 
                 if (
                     name == target_name
@@ -251,28 +256,40 @@ class ChildScreeningPage:
                         f"Matched child row: {name} / {father_name}"
                     )
 
-                    editChildButton = row.locator(
+                    actions_cell = cells.nth(
+                        column_map["Screening Actions"]
+                    )
+
+                    editChildButton = actions_cell.locator(
                         'div[title="Start Screening"]'
                     )
 
                     break
 
             if editChildButton is None:
-
                 raise Exception(
-                    f"Could not find child "
-                    f"{self.child.name}"
+                    f"Could not find child {self.child.name}"
                 )
+
         else:
-            editChildButton = (
-            existingChildLocator
-            .locator('div[title="Start Screening"]')
+
+            # Existing locator should already be the row
+            headers = self.page.locator("table thead th")
+
+            column_map = {
+                headers.nth(i).inner_text().strip(): i
+                for i in range(headers.count())
+            }
+
+            actions_cell = (
+                existingChildLocator
+                .locator("td")
+                .nth(column_map["Screening Actions"])
             )
-        
 
-
-        
-
+            editChildButton = actions_cell.locator(
+                'div[title="Start Screening"]'
+            )
 
         editChildButton.click()
 

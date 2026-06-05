@@ -32,73 +32,89 @@ class SearchStudent:
 
     def _get_resulted_rows(self) -> list[SearchedStudentCandidate]:
         """
-        After searching there will be some rows will come return them whole in list.
-        Returns an object:
-        name: string
-        dob: string
-        fatherName: string
-        motherName: string
-        isStartEditingPresent: bool
+        After searching, return all resulting rows.
+
+        Returns:
+            name: str
+            dob: str
+            fatherName: str
+            motherName: str
+            isChildEligibleForScreening: bool
+            locator: Locator
         """
 
-        rows = self.page.locator("tbody tr").all()
+        # Build header -> index mapping
+        headers = self.page.locator("table thead th")
+
+        column_map = {
+            headers.nth(i).inner_text().strip(): i
+            for i in range(headers.count())
+        }
+
+        
+
+        rows = self.page.locator("table tbody tr").all()
+
+        first_row = rows[0]
+        first_row_tds = first_row.locator("td")
+
+        if (
+            first_row_tds.count() == 1
+            and "no data available"
+            in first_row_tds.first.inner_text().strip().lower()
+        ):
+            logging.info("No matching children found")
+            return []
 
         logging.info(f"Found rows: {len(rows)}")
+
         finalRows = []
 
-        if rows:
+        for row in rows:
 
-            for row in rows:
-
+            try:
                 tds = row.locator("td")
 
-                td_count = tds.count()
-
-                # logging.info(f"TD count: {td_count}")
-
-                if td_count >= 3:
-                    try:
-                        name = tds.nth(2).inner_text()
-                        dob = tds.nth(4).inner_text()
-                        fatherName = tds.nth(6).inner_text()
-                        motherName = tds.nth(7).inner_text()
-
-                        td12 = tds.nth(11)
-                        firstElement = td12.locator("div > *").first
-                        title = firstElement.get_attribute("title")
-
-                        if title == "Start Screening":
-                            isStartScreeningPresent = True
-                        else:
-                            isStartScreeningPresent = False
-                        
-                        finalRows.append(SearchedStudentCandidate(
-                            name=name,
-                            dob=dob,
-                            fatherName=fatherName,
-                            motherName=motherName,
-                            isChildEligibleForScreening=isStartScreeningPresent,
-                            locator=row
-                        ))
-                        
-                    except Exception as e:
-                        logging.exception(f"exception occured while getting rows: {e}")
-                        continue
-
-                    
-
-                else:
-
-                    logging.error(
-                        "Row has less than 3 td"
+                def get_cell(header_name: str) -> str:
+                    return (
+                        tds
+                        .nth(column_map[header_name])
+                        .inner_text()
+                        .strip()
                     )
 
-        else:
+                name = get_cell("Name")
+                dob = get_cell("DOB")
+                fatherName = get_cell("Father's Name")
+                motherName = get_cell("Mother's Name")
+                actions_cell = tds.nth(
+                        column_map["Screening Actions"]
+                    )
 
-            return []
-        
+                isChildEligibleForScreening = (
+                    actions_cell
+                    .locator("div:has(.lucide-stethoscope)")
+                    .count() > 0
+                )
+
+                finalRows.append(
+                    SearchedStudentCandidate(
+                        name=name,
+                        dob=dob,
+                        fatherName=fatherName,
+                        motherName=motherName,
+                        isChildEligibleForScreening=isChildEligibleForScreening,
+                        locator=row,
+                    )
+                )
+
+            except Exception as e:
+                logging.exception(
+                    f"Exception occurred while getting row data: {e}"
+                )
+                continue
+
         return finalRows
-
 
     def _normalize_dob(self,dob:str)-> str:
         """

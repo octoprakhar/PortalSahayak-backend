@@ -90,21 +90,42 @@ class ExistingChildrenWithoutData:
 
     def _getAllChild(self) -> list[ExistingChildResult]:
         """
-        Returning all the children currently showing on the table, without clicking the next button
+        Returning all the children currently showing on the table, without clicking the next button,
+        using column names instead of hardcoded indexes so it survives
+        column reordering/addition/removal
         """
         all_children = []
-        rows = self.page.locator("table > tbody > tr")
+
+        headers = self.page.locator("table thead th")
+
+        column_map = {
+            headers.nth(i).inner_text().strip(): i
+            for i in range(headers.count())
+        }
+        rows = self.page.locator("table tbody tr")
         rowCount = rows.count()
 
         for i in range(rowCount):
             row = rows.nth(i)
+            cells = row.locator("td")
 
-            name = row.locator("td").nth(2).inner_text()
-            gender = row.locator("td").nth(3).inner_text()
-            dob = self._normalizeDob(row.locator("td").nth(4).inner_text())
-            fatherName = row.locator("td").nth(6).inner_text()
-            motherName = row.locator("td").nth(7).inner_text()
-            isStartScreeningButtonPresent = row.locator("td").nth(11).locator("div > *").first.get_attribute("title") == "Start Screening"
+            def get_cell(header_name: str) -> str:
+                index = column_map[header_name]
+                return cells.nth(index=index).inner_text().strip()
+            
+            name = get_cell("Name")
+            gender = get_cell("Gender")
+            dob = self._normalizeDob(get_cell("DOB"))
+            fatherName = get_cell("Father's Name")
+            motherName = get_cell("Mother's Name")
+
+            # Infer screening state from Health Status column
+            # Screened rows have values like "Healthy"
+            # Unscreened rows are empty
+            health_status = get_cell("Health Status")
+
+            isStartScreeningButtonPresent = not bool(health_status)
+
 
             all_children.append(ExistingChildResult(name=name, dob=dob, fatherName=fatherName, motherName=motherName, gender=gender, isStartScreeningButtonPresent=isStartScreeningButtonPresent ))
 
