@@ -154,6 +154,14 @@ class SearchStudent:
         return None
 
 
+    @staticmethod
+    def clear_search_text(page:Page):
+        """
+        In a page, it just clears the search input for searching user
+        """
+
+        searchInputField = page.locator('input[placeholder="Search..."]')
+        searchInputField.fill("")
 
         
 

@@ -10,6 +10,7 @@ from constants.log_type import LogType
 from services.ActiveJobStore import ActiveJobStore
 from all_models.RuntimeJob import RuntimeJob
 from workflow.workflow import ScreeningWorkflow
+from all_models.ChildProcessingResult import ChildProcessingResult
 
 
 class RunTimeManager:
@@ -186,9 +187,10 @@ class RunTimeManager:
 
         ## Start Screening Workflow with all the data
         try:
-            screeningWorkFLow: ScreeningWorkflow = ScreeningWorkflow(page=page)
+            screeningWorkFLow: ScreeningWorkflow = ScreeningWorkflow(page=page,job_id=self.job_id)
         
-            screeningWorkFLow.run(csv_file,mobileNumber,address)
+            failed_result = screeningWorkFLow.run(csv_file,mobileNumber,address)
+            ## TODO change it to csv and then send it to data
             JobManager.add_log(
                 job_id=self.job_id,
                 log=JobLog(

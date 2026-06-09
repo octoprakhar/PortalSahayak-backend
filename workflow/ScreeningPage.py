@@ -2,15 +2,24 @@
 # This class is simply saying "give me the page object, and the child and I will save it"
 import logging
 from datetime import datetime
-
 from playwright.sync_api import Page,Locator
+from zoneinfo import ZoneInfo
+import random
+
 from all_models.child_models import Child
+from services.PortalFeedbackDetector import PortalFeedbackDetector
+from services.SearchStudent import SearchStudent
+from services.JobManager import JobManager
+from all_models.FeedbackResult import FeedbackResult,FeedbackOutcome
+from constants.log_type import LogType
+from all_models.JobLogs import JobLog
 from utils.loaderUtils import get_age
 
 class ChildScreeningPage:
-    def __init__(self, page:Page, child:Child):
+    def __init__(self, page:Page, child:Child, job_id: str = None):
         self.page = page
         self.child = child
+        self.job_id = job_id
         self.age = get_age(self.child.dob)
 
 
@@ -95,8 +104,123 @@ class ChildScreeningPage:
 
         option.click()
 
+    def _skip_child(self):
+        """
+        For a reason if we don't have to enter this child just go to
+        main screening page
+        """
+        ## When DUPLICATE IS PRESENT
+        duplicate_record = self.page.locator(
+            'h3:text-is("Duplicate Record Found")'
+        )
 
-    def insertPersonalDetails(self):
+        if duplicate_record.is_visible():
+            try:
+                close_btn = self.page.get_by_role("button", name="Close")
+                close_btn.wait_for(state="visible", timeout=5000)
+                close_btn.click()
+            except TimeoutError:
+                pass
+        
+        ## When child health data is saving
+        child_register = self.page.get_by_role("heading", name="👨‍👩‍👧‍👦 Personal & Family Details")
+
+        if child_register.is_visible():
+            logging.info("We are in page for entering child registration, now returning")
+            try:
+                cancel_btn = self.page.get_by_role("button", name="Cancel")
+                cancel_btn.wait_for(state="visible", timeout=5000)
+                cancel_btn.click()
+            except TimeoutError:
+                pass
+
+        health_register = self.page.get_by_role("heading", name="Screening for Health Conditions")
+
+        if health_register.is_visible():
+            try:
+                back_btn = self.page.get_by_role("button", name="Back")
+                back_btn.wait_for(state="visible", timeout=5000)
+                back_btn.click()
+            except TimeoutError:
+                pass
+
+        ## For last preview screen
+        prev_heading = self.page.get_by_role("heading", name="Screening Preview")
+        if prev_heading.is_visible():
+            try:
+                self.page.get_by_role("button", name="Back to Edit").click()
+                back_btn = self.page.get_by_role("button", name="Back")
+                back_btn.wait_for(state="visible", timeout=5000)
+                back_btn.click()
+
+            except Exception:
+                pass
+
+
+
+
+        ## And also clear the search bar if exists
+        SearchStudent.clear_search_text(self.page)
+
+    def _log_job(self, log_type: LogType, message: str):
+        logging.info(f"Job log is called for child : {self.child.name}, with job_id: {self.job_id}")
+        if not self.job_id:
+            logging.info("Can't find job ID")
+            return
+
+        JobManager.add_log(
+            self.job_id,
+            JobLog(
+                timeStamp=datetime.now(
+                    ZoneInfo("Asia/Kolkata")
+                ).isoformat(),
+                type=log_type,
+                message=message
+            )
+        )
+
+    def _log_child(self, log_type: LogType, message: str):
+        self._log_job(
+            log_type,
+            f"{self.child.name}, C/o- {self.child.fatherName}: {message}"
+        )
+
+    def _log_feedback(self, feedback: FeedbackResult):
+        logging.info(f"Log feedback is called for child: {self.child.name}, with feeback as : {feedback}")
+        self._log_child(
+            LogType.INFO,
+            "Processing started"
+        )
+        if feedback.outcome == FeedbackOutcome.DUPLICATE:
+            self._log_child(
+                LogType.ERROR,
+                "Duplicate entry found."
+            )
+            return
+
+        if feedback.outcome == FeedbackOutcome.VALIDATION_ERROR:
+            self._log_child(
+                LogType.ERROR,
+                ",".join(feedback.validation_errors)
+            )
+            return
+
+        if feedback.outcome == FeedbackOutcome.FAILURE or feedback.outcome == FeedbackOutcome.UNKNOWN:
+            self._log_child(
+                LogType.ERROR,
+                feedback.message
+            )
+            return
+
+        if feedback.outcome == FeedbackOutcome.SUCCESS:
+            self._log_child(
+                LogType.SUCCESS,
+                feedback.message
+            )
+
+
+
+    def insertPersonalDetails(self) -> FeedbackResult:
         ## We will take it from loaded excel his name, father's name, mother's name, DOB, address, mobile number
         ## Then perform this 
         self.page.get_by_role('button',name="Add New Child").click()
@@ -125,7 +249,11 @@ class ChildScreeningPage:
 
         childNameField.fill(self.child.name)
         dobField.fill(self.child.dob)
+        # random_number = random.randint(0, 9)
         genderDropDown.select_option(label=self.child.gender)
+        ## For testing
+        # if random_number >= 5:
+            
         motherNameField.fill(self.child.motherName)
         fatherNameField.fill(self.child.fatherName)
         mobileNumberField.fill(self.child.mobileNumber)
@@ -143,13 +271,27 @@ class ChildScreeningPage:
         saveChildBtn = self.page.get_by_role('button',name='Save & Start Screening')
         saveChildBtn.click()
 
-    def insertHealthReport(self):
+        # Waiting and detecting if success and failure by UI
+        self.page.wait_for_timeout(1500)
+        portalFeedback = PortalFeedbackDetector(self.page,success_msg="Successfully inserted child detail")
+        current_page_locator = self.page.get_by_role("heading", name="👨‍👩‍👧‍👦 Personal & Family Details")
+        next_page_locator = self.page.get_by_role("heading", name="Screening for Health Conditions")
+
+        feedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
+        return feedbackResult
+        # return FeedbackResult()
+
+
+    def insertHealthReport(self) -> FeedbackResult:
         heightField = self.page.locator('[name="height"]')
         weightField = self.page.locator('[name="weight"]')
         hbField = self.page.locator('[name="hb"]')
         
 
+        # random_number = random.randint(0, 9)
+        # if random_number >= 5:
         heightField.fill(self.child.height)
+        
         weightField.fill(self.child.weight)
         hbField.fill(self.child.hb)
 
@@ -204,10 +346,18 @@ class ChildScreeningPage:
             self.select_facility(self.child.facilityType,self.child.facilityName)
 
         finalSubmitBtn = self.page.get_by_role('button',name='Preview & Submit')
-        self.page.wait_for_timeout(5000)
+        # self.page.wait_for_timeout(5000)
         finalSubmitBtn.click()
+        self.page.wait_for_timeout(1000)
+        portalFeedback = PortalFeedbackDetector(self.page, success_msg="Succesfully saved child health detail, moving to final submission.")
+        current_page_locator = self.page.get_by_role("heading", name="Screening for Health Conditions")
+        next_page_locator = self.page.get_by_role("heading", name="Screening Preview")
+        feedbackResult: FeedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
+        return feedbackResult
 
-    def saveExistingChild(self, existingChildLocator: Locator = None):
+
+
+    def saveExistingChild(self, existingChildLocator: Locator = None) -> FeedbackResult:
         """
         Saves the existing child.
         If no locator is provided, locate the row using self.child details.
@@ -293,6 +443,20 @@ class ChildScreeningPage:
 
         editChildButton.click()
 
+        
+        if self.job_id:
+            JobManager.add_log(
+            self.job_id,
+            JobLog(
+                timeStamp=datetime.now(
+                    ZoneInfo("Asia/Kolkata")
+                ).isoformat(),
+                type=LogType.INFO,
+                message=f"{self.child.name} C/o- {self.child.fatherName} : is already exist."
+            )
+        )
+
+
         ## Check if target of students are completed then just press 'Yes proceed button automatically'
         
         message = self.page.get_by_text(
@@ -306,9 +470,12 @@ class ChildScreeningPage:
 
         self.page.wait_for_load_state("networkidle")
 
-        self.insertHealthReport()
-
-        self.page.wait_for_timeout(1500)
+        healthReportFeedbackResult = self.insertHealthReport()
+        self._log_feedback(healthReportFeedbackResult)
+        if healthReportFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
+            self._skip_child()
+            return healthReportFeedbackResult
+        # self.page.wait_for_timeout(1500)
 
         mobileNumberField = self.page.locator(
         'input[placeholder="Enter Mobile"]'
@@ -330,31 +497,65 @@ class ChildScreeningPage:
 
         confirmClickBtn.click()
 
+        portalFeedback = PortalFeedbackDetector(self.page, success_msg="Sucessfully saved existing child's detail")
+        current_page_locator = self.page.get_by_role("heading", name="Screening Preview")
+        next_page_locator = self.page.get_by_role("button", name="+ Add New Child")
+        finalFeedbackResult: FeedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
+        self._log_feedback(finalFeedbackResult)
+        if finalFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
+            self._skip_child()
+        return finalFeedbackResult
+
+
         
 
 
     
 
-    def submit(self):
+    def submit(self) -> FeedbackResult:
 
         ## If child is above 6years and It is awc don't enter here
         if self.age > 6:
             logging.info(f"📢📢 Got child of name: {self.child.name} has age greater than 6 and we are doing AWC so leaving.")
-            return
+            return FeedbackResult(outcome=FeedbackOutcome.INVALID_DATA, message=f"Got child of name: {self.child.name} has age greater than 6 and we are doing AWC so leaving.")
         ## Add child's personal detail and then add it's health report of each child, and then go
 
 
         ## For each child
         try:
-            self.insertPersonalDetails()
-            self.insertHealthReport()
+            logging.info("🎁🎁🎁Started the process of initial saving of child detail.")
+            registerFeedbackResult = self.insertPersonalDetails()
+            self._log_feedback(registerFeedbackResult)
+            if registerFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
+                self._skip_child()
+                return registerFeedbackResult
+            
+            logging.info("🎁🎁🎁Started the process of health report saving of child detail.")
+
+            healthReportFeedbackResult = self.insertHealthReport()
+            self._log_feedback(healthReportFeedbackResult)
+            if healthReportFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
+                self._skip_child()
+                return healthReportFeedbackResult
 
             confirmClickBtn = self.page.get_by_role('button',name='Confirm & Submit')
+
             confirmClickBtn.click()
+            self.page.wait_for_timeout(1000)
+            portalFeedback = PortalFeedbackDetector(self.page, success_msg="Child finally saved succesfully.")
+            current_page_locator = self.page.get_by_role("heading", name="Screening Preview")
+            next_page_locator = self.page.get_by_role("button", name="+ Add New Child")
+            finalFeedbackResult: FeedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
+            self._log_feedback(finalFeedbackResult)
+            if finalFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
+                self._skip_child()
+            return finalFeedbackResult
 
         except Exception as e:
             logging.error(f"Can't save this child saving it to unsaved child with error message and moving to next: {e}")
             ## TODO save this non-saved child to our unsaved excel file
+            self._skip_child()
+            return FeedbackResult(outcome=FeedbackOutcome.SYSTEM_ERROR, message="Internal Error happened. Moving to next child")
 
 
     
