@@ -1,6 +1,14 @@
 from datetime import datetime
 from pathlib import Path
 from playwright.sync_api import sync_playwright
+import logging
+from zoneinfo import ZoneInfo
+
+from services.JobManager import JobManager
+from all_models.JobLogs import JobLog
+from constants.job_status import JobStatus
+from constants.log_type import LogType
+
 
 from services.RuntimeManager import RunTimeManager
 
@@ -12,7 +20,27 @@ def append_log(job_dir: Path, message: str):
 
 def launch_browser_job(job_id:str):
     runtime_manager = RunTimeManager(job_id)
-    runtime_manager.launch_browser_instance()
+    try:
+        runtime_manager.launch_browser_instance()
+        runtime_manager.login_user()
+    except Exception as e:
+        JobManager.update_job_status(
+            job_id=job_id,
+            status=JobStatus.FAILED
+        )
+
+        JobManager.add_log(job_id=job_id,log=JobLog(
+                    timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),
+                    message="Error occured while starting and logging user",
+                    type=LogType.ERROR
+                ))
+        logging.exception(f"Error occured while starting and logging user as \n{e}")
+        
+
+    
+
 
 def open_institution_page(job_id: str):
     runtime_manager = RunTimeManager(job_id=job_id)

@@ -26,6 +26,8 @@ async def create_job(
     address: Optional[str] = Form(None),
     mobileNumber: Optional[str] = Form(None),
     month: Optional[str] = Form(None),
+    userName: Optional[str] = Form(None),
+    password: Optional[str] = Form(None),
     file: UploadFile | None = File(None)
 ):
     """
@@ -50,6 +52,18 @@ async def create_job(
             detail="Mobile number is required"
         )
     
+    if not userName or not userName.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="UserName is required"
+        )
+
+    if not password or not password.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Password is required"
+        )
+    
     if not month or not month.strip():
         raise HTTPException(
             status_code=400,
@@ -63,7 +77,7 @@ async def create_job(
         )
 
     ## Create the job
-    jobManager = JobManager(address=address,mobileNumber=mobileNumber,file=file,month=month)
+    jobManager = JobManager(address=address,mobileNumber=mobileNumber,file=file,month=month, userName=userName, password=password)
     job_id = await jobManager.create_job()
 
     ## Launching browser

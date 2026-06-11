@@ -2,7 +2,8 @@ from enum import Enum
 
 class JobStatus(str, Enum):
     IDLE = "idle"
-    WAITING_LOGIN = "waiting_login"
+    STARTING = "starting"
+    LOGGING_IN = "logging_in"
     WAITING_INSTITUTION = "waiting_institution"
     RUNNING = "running"
     COMPLETED = "completed"

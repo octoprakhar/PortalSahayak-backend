@@ -11,6 +11,8 @@ from constants.log_type import LogType
 from services.ActiveJobStore import ActiveJobStore
 from all_models.RuntimeJob import RuntimeJob
 from workflow.workflow import ScreeningWorkflow
+from workflow.LoginPage import LoginPage
+from all_models.FeedbackResult import FeedbackResult, FeedbackOutcome
 from all_models.ChildProcessingResult import ChildProcessingResult
 
 
@@ -46,13 +48,93 @@ class RunTimeManager:
         page.goto("https://rbsk.mohfw.gov.in/RBSK/login")
 
         ActiveJobStore.add_job(job_id=self.job_id, playwright=p,browser=browser,context=context, page=page)
-        JobManager.update_job_status(status=JobStatus.WAITING_LOGIN, job_id=self.job_id)
+        JobManager.update_job_status(status=JobStatus.STARTING, job_id=self.job_id)
         JobManager.add_log(job_id=self.job_id, log=JobLog(timeStamp=datetime.now(
                         ZoneInfo("Asia/Kolkata")
                     ).isoformat(),message="Browser opened and login page loaded",type=LogType.SUCCESS))
 
         return RuntimeJob(playwright=p, browser=browser, context=context,page=page)
-            
+    
+    def login_user(self):
+        """
+        This will automatically login user, get userName and password from from jobMetadata
+        """
+        runtime_job = ActiveJobStore.get_job(job_id=self.job_id)
+
+        if runtime_job is None:
+            raise ValueError(f"Job {self.job_id} not found")
+        
+        page:Page = runtime_job.page
+        
+        try:
+            page.get_by_placeholder("Username").wait_for(
+                state="visible",
+                timeout=3000
+            )
+        except Exception:
+            JobManager.add_log(
+                job_id=self.job_id,
+                log=JobLog(
+                    timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),
+                    message="Login page is not available. Please retry again or check network connection",
+                    type=LogType.ERROR
+                )
+            )
+            return
+        
+        JobManager.update_job_status(status=JobStatus.LOGGING_IN,job_id=self.job_id)
+        
+        JobManager.add_log(
+                job_id=self.job_id,
+                log=JobLog(
+                    timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),
+                    message="Starting to log in to the portal.",
+                    type=LogType.SUCCESS
+                )
+            )
+        
+        metadata = JobManager.get_job_metadata(self.job_id)
+        userName = metadata.userName
+        password = metadata.password
+
+        screening = page.locator('[title="Screening"]')
+        loginPage = LoginPage(page=page,success_locator=screening)
+
+        loginResult: FeedbackResult = loginPage.login(userName=userName, password=password)
+
+        if loginResult.outcome == FeedbackOutcome.SUCCESS:
+            JobManager.update_job_status(status=JobStatus.WAITING_INSTITUTION,job_id=self.job_id)
+        
+            JobManager.add_log(
+                    job_id=self.job_id,
+                    log=JobLog(
+                        timeStamp=datetime.now(
+                            ZoneInfo("Asia/Kolkata")
+                        ).isoformat(),
+                        message=loginResult.message,
+                        type=LogType.SUCCESS
+                    )
+                )
+            return
+        
+        JobManager.update_job_status(status=JobStatus.FAILED,job_id=self.job_id)
+        
+        JobManager.add_log(
+                job_id=self.job_id,
+                log=JobLog(
+                    timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),
+                    message=loginResult.message,
+                    type=LogType.ERROR
+                )
+            )
+
+
         
 
 

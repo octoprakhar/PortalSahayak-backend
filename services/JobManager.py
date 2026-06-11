@@ -19,7 +19,7 @@ class JobManager:
     """
     This class helps with doing CRUD operations across a particular job. It only does persistant work
     """
-    def __init__(self, address: str, mobileNumber: str, file: UploadFile, month: str):
+    def __init__(self, address: str, mobileNumber: str, file: UploadFile, month: str, userName: str, password: str):
         
         """
         It will initiate the JobManager class, with given address, mobileNumber, 
@@ -31,6 +31,8 @@ class JobManager:
         self.mobileNumber = mobileNumber
         self.month = month
         self.file = file
+        self.userName = userName
+        self.password = password
 
     async def create_job(self) -> str:
         """
@@ -63,7 +65,7 @@ class JobManager:
             raise RuntimeError("Can't create the file that is uploaded by the user") from e
 
         ## Now making the file to store persistant data regarding job
-        job_metadata = JobMetadata(job_id=job_id, status=JobStatus.IDLE.value, created_at=datetime.utcnow().isoformat(), address=self.address, mobile_number=self.mobileNumber,month=self.month)
+        job_metadata = JobMetadata(job_id=job_id, status=JobStatus.IDLE.value, created_at=datetime.utcnow().isoformat(), address=self.address, mobile_number=self.mobileNumber,month=self.month, userName=self.userName, password=self.password)
         with open(job_dir / "job.json", "w", encoding="utf-8") as f:
             json.dump(asdict(job_metadata), f, indent=2)
 
