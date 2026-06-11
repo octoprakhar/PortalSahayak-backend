@@ -2,6 +2,7 @@ from playwright.sync_api import Page,sync_playwright
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from pathlib import Path
+import logging
 
 from constants.job_status import JobStatus
 from services.JobManager import JobManager
@@ -166,6 +167,7 @@ class RunTimeManager:
 
         except Exception as e:
             ## Moving to failed as I can't do anything for that, user needs to retry again from start
+            logging.exception(f"Error occured while child screening\n{e}")
             JobManager.add_log(
                 job_id=self.job_id,
                 log=JobLog(
@@ -211,6 +213,7 @@ class RunTimeManager:
 
         except Exception as e:
             ## Moving to failed as I can't do anything for that, user needs to retry again from start
+            
             JobManager.add_log(
                 job_id=self.job_id,
                 log=JobLog(

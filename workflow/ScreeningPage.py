@@ -30,6 +30,10 @@ class ChildScreeningPage:
     def select_disease(self,disease_name):
 
         ## Disease name for a child (a nullable column) must be get from excel
+
+        logging.info(
+        f"🧐🧐🧐🧐🧐🧐 Selecting disease. Child={self.child.name}, disease={disease_name}"
+        )
         tabs = [
             "Defects at Birth",
             "Deficiencies",
@@ -625,6 +629,7 @@ class ChildScreeningPage:
 
         confirmClickBtn.click()
 
+        self.page.wait_for_timeout(2000)
         portalFeedback = PortalFeedbackDetector(self.page, success_msg="Sucessfully saved existing child's detail")
         current_page_locator = self.page.get_by_role("heading", name="Screening Preview")
         next_page_locator = self.page.get_by_role("button", name="+ Add New Child")
@@ -670,7 +675,7 @@ class ChildScreeningPage:
 
             confirmClickBtn.click()
             self.page.wait_for_load_state('networkidle')
-            self.page.wait_for_timeout(1000)
+            self.page.wait_for_timeout(2000)
             portalFeedback = PortalFeedbackDetector(self.page, success_msg="Child finally saved succesfully.")
             current_page_locator = self.page.get_by_role("heading", name="Screening Preview")
             next_page_locator = self.page.get_by_role("button", name="+ Add New Child")

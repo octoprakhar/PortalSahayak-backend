@@ -56,7 +56,10 @@ class ScreeningWorkflow:
         
         ## Let's enter the existing child, that are not present in dataset given
         logging.info("📢📢📢📢📢📢📢📢📢📢 Starting with Existing children📢📢📢📢📢📢📢📢📢📢📢📢📢📢📢📢")
-        existingChildrenWithoutData = ExistingChildrenWithoutData(mobileNumber=defaultContactNum, page=self.page, address=address,can_add_sam = self.sam_manager.can_accept_sam(), job_id=self.job_id)
-        existingChildrenWithoutData.addExistingChildren()
+        try:
+            existingChildrenWithoutData = ExistingChildrenWithoutData(mobileNumber=defaultContactNum, page=self.page, address=address,sam_manager=self.sam_manager, job_id=self.job_id)
+            existingChildrenWithoutData.addExistingChildren()
+        except Exception as e:
+            logging.exception(f"Error while entering the existing students as: \n{e}")
 
         return failed_children
