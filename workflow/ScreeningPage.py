@@ -5,6 +5,8 @@ from datetime import datetime
 from playwright.sync_api import Page,Locator
 from zoneinfo import ZoneInfo
 import random
+import time
+
 
 from all_models.child_models import Child
 from services.PortalFeedbackDetector import PortalFeedbackDetector
@@ -13,15 +15,17 @@ from services.JobManager import JobManager
 from all_models.FeedbackResult import FeedbackResult,FeedbackOutcome
 from constants.log_type import LogType
 from all_models.JobLogs import JobLog
-from utils.loaderUtils import get_age
+from utils.loaderUtils import get_age,get_corrected_values
+from services.SamManager import SamManager
 
 class ChildScreeningPage:
-    def __init__(self, page:Page, child:Child, job_id: str = None):
+    def __init__(self, page:Page, child:Child,sam_manager : SamManager, job_id: str = None):
         self.page = page
         self.child = child
         self.job_id = job_id
+        self.sam_manager = sam_manager
         self.age = get_age(self.child.dob)
-
+        self.is_to_select_nrc = False
 
     def select_disease(self,disease_name):
 
@@ -47,8 +51,9 @@ class ChildScreeningPage:
         
         return False
     
-    def select_facility(self, facility_type, facility_name):
+    def select_facility(self, facility_type, facility_name, can_add_sam: bool):
 
+        ## TODO Is SAM present
         refer_checkbox = self.page.locator('#referSameInstitute')
         refer_checkbox.check()
 
@@ -62,47 +67,84 @@ class ChildScreeningPage:
         facility_type_input = referral_section.locator(
             'input[role="combobox"]'
         ).first
-
-        facility_type_input.click()
-        facility_type_input.fill(facility_type)
-
-        option = self.page.get_by_role(
-            "option",
-            name=facility_type,
-            exact=True
-        ).first
-
-        option.wait_for(state="visible")
-
-        logging.info(
-            f"Selecting facility type: {option.text_content()}"
-        )
-
-        option.click()
-
-    # -----------------------------
-    # FACILITY NAME
-    # -----------------------------
         facility_name_input = referral_section.locator(
             'input[role="combobox"]'
         ).nth(1)
 
-        facility_name_input.click()
-        facility_name_input.fill(facility_name)
+        if can_add_sam:
+            facility_type_input.click()
+            facility_type_input.fill("NRC")
+            option = self.page.get_by_role(
+                "option",
+                name="NRC",
+                exact=True
+            ).first
 
-        option = self.page.get_by_role(
-            "option",
-            name=facility_name,
-            exact=True
-        ).first
+            option.wait_for(state="visible")
 
-        option.wait_for(state="visible")
+            logging.info(
+                f"Selecting facility type: {option.text_content()}"
+            )
 
-        logging.info(
-            f"Selecting facility name: {option.text_content()}"
-        )
+            option.click()
+            facility_name_input.click()
+            facility_name_input.fill("NRC DH BALAGHAT (NRC)")
+            option = self.page.get_by_role(
+                "option",
+                name="NRC DH BALAGHAT (NRC)",
+                exact=True
+            ).first
 
-        option.click()
+            option.wait_for(state="visible")
+
+            logging.info(
+                f"Selecting facility name: {option.text_content()}"
+            )
+
+            option.click()
+            
+        else:
+            facility_type_input.click()
+            
+            facility_type_input.fill(facility_type)
+
+            option = self.page.get_by_role(
+                "option",
+                name=facility_type,
+                exact=True
+            ).first
+
+            option.wait_for(state="visible")
+
+            logging.info(
+                f"Selecting facility type: {option.text_content()}"
+            )
+
+            option.click()
+
+        
+
+    # -----------------------------
+    # FACILITY NAME
+    # -----------------------------
+        
+
+            facility_name_input.click()
+            facility_name_input.fill(facility_name)
+
+            option = self.page.get_by_role(
+                "option",
+                name=facility_name,
+                exact=True
+            ).first
+
+            option.wait_for(state="visible")
+
+            logging.info(
+                f"Selecting facility name: {option.text_content()}"
+            )
+
+            option.click()
 
     def _skip_child(self):
         """
@@ -293,7 +335,92 @@ class ChildScreeningPage:
         heightField.fill(self.child.height)
         
         weightField.fill(self.child.weight)
+
         hbField.fill(self.child.hb)
+
+        ## Check if child is SAM if yes, then check can we can't add it to SAM then just change it.
+        can_add_sam = self.sam_manager.can_accept_sam()
+
+        is_child_sam = False
+
+        
+
+        try:
+            self.page.wait_for_function("""
+                () => {
+                    const w = document.querySelector(
+                        'select[name="weightAgeClassification"]'
+                    )?.value;
+
+                    const l = document.querySelector(
+                        'select[name="lengthAgeClassification"]'
+                    )?.value;
+
+                    const wh = document.querySelector(
+                        'select[name="weightHeightClassification"]'
+                    )?.value;
+
+                    return w !== "0" &&
+                        l !== "0" &&
+                        wh !== "0";
+                }
+                """, timeout=5000)
+        except Exception as e:
+            logging.error(f"Error occured while trying to get functions correct: {e}")
+            return FeedbackResult(outcome=FeedbackOutcome.FAILURE, message=e.message)
+        
+        ## Checking for referal checkbox first time after height and weight fill
+        referral_checkbox = self.page.locator('#referSameInstitute')
+        
+        
+        ## Sam checking only when referal checkbox is available
+        if referral_checkbox.is_visible():
+            referral_table = self.page.locator(
+                "table:has(th:text-is('Facility Type'))"
+            )
+
+
+            
+
+            # logging.info(f"Got logs for referal table as as: {referral_table.inner_text()}")
+            table_text = referral_table.inner_text()
+
+            is_child_sam = "SAM" in table_text
+
+
+            if is_child_sam and not can_add_sam:
+                logging.info(f"We cannot add this child : {self.child.name} in SAM, because limit exceeds.")
+                new_weight, new_height = get_corrected_values(self.age)
+                logging.info(f"Setting new weight and height of child as :{new_weight,new_height}")
+                heightField.fill(str(new_height))
+        
+                weightField.fill(str(new_weight))
+                try:
+                    self.page.wait_for_function("""
+                        () => {
+                            const w = document.querySelector(
+                                'select[name="weightAgeClassification"]'
+                            )?.value;
+
+                            const l = document.querySelector(
+                                'select[name="lengthAgeClassification"]'
+                            )?.value;
+
+                            const wh = document.querySelector(
+                                'select[name="weightHeightClassification"]'
+                            )?.value;
+
+                            return w !== "0" &&
+                                l !== "0" &&
+                                wh !== "0";
+                        }
+                        """, timeout=5000)
+                except Exception as e:
+                    logging.error(f"Error occured while trying to get functions correct: {e}")
+                    return FeedbackResult(outcome=FeedbackOutcome.FAILURE, message=e.message)
+
+            self.is_to_select_nrc = is_child_sam and can_add_sam
+            
 
         if round(self.age,2) <= 5:
             headCircumField = self.page.locator('[name="headCircumference"]')
@@ -343,7 +470,8 @@ class ChildScreeningPage:
         referral_checkbox = self.page.locator('#referSameInstitute')
 
         if referral_checkbox.is_visible():
-            self.select_facility(self.child.facilityType,self.child.facilityName)
+            logging.info(f"Calling Selecting facility for child: {self.child.name}, and to select nrc as : {self.is_to_select_nrc}, and is this child sam: {is_child_sam}")
+            self.select_facility(facility_type=self.child.facilityType,facility_name=self.child.facilityName,can_add_sam=self.is_to_select_nrc)
 
         finalSubmitBtn = self.page.get_by_role('button',name='Preview & Submit')
         # self.page.wait_for_timeout(5000)
@@ -541,13 +669,19 @@ class ChildScreeningPage:
             confirmClickBtn = self.page.get_by_role('button',name='Confirm & Submit')
 
             confirmClickBtn.click()
+            self.page.wait_for_load_state('networkidle')
             self.page.wait_for_timeout(1000)
             portalFeedback = PortalFeedbackDetector(self.page, success_msg="Child finally saved succesfully.")
             current_page_locator = self.page.get_by_role("heading", name="Screening Preview")
             next_page_locator = self.page.get_by_role("button", name="+ Add New Child")
             finalFeedbackResult: FeedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
             self._log_feedback(finalFeedbackResult)
+            if finalFeedbackResult.outcome == FeedbackOutcome.SUCCESS:
+                if self.is_to_select_nrc:
+                    logging.info(f"Selecting NRC for this child {self.child.name}")
+                    self.sam_manager.register_sam()
             if finalFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
+                logging.info(f"Error in finally saving this child.")
                 self._skip_child()
             return finalFeedbackResult
 

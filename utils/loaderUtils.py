@@ -5,7 +5,6 @@ import datetime
 import logging
 import random
 
-from services.SamClassifier import SAMClassifier
 
 def get_age(dob):
     """
@@ -198,9 +197,7 @@ def get_corrected_values(age_years):
 
 
 
-def standardize_facility(df, classifier, n=3):
-
-    sam_count = 0
+def standardize_facility(df):
 
     for idx, row in df.iterrows():
 
@@ -213,22 +210,6 @@ def standardize_facility(df, classifier, n=3):
 
         facility = str(row['facilityName']).strip().lower()
 
-        # --------------------------------
-        # CLASSIFY CHILD
-        # --------------------------------
-
-        result = classifier.classify(
-
-            dob=row['dob'],
-
-            sex=row['gender'],
-
-            weight=float(row['weight']),
-
-            height=float(row['height'])
-        )
-
-        is_sam = result["status"] == "SAM"
 
         # --------------------------------
         # FACILITY TYPES TO HANDLE
@@ -242,48 +223,18 @@ def standardize_facility(df, classifier, n=3):
         )
 
         # --------------------------------
-        # IF SAM FOUND
+        # EMPTY / CHC / NRC
         # --------------------------------
 
-        if is_sam and valid_facility:
+        if valid_facility:
 
-            # FIRST N SAM CHILDREN -> NRC
-            if sam_count < n:
+            df.loc[idx, 'facilityType'] = (
+                'Block Level Facility'
+            )
 
-                df.loc[idx, 'facilityType'] = 'NRC'
-
-                df.loc[idx, 'facilityName'] = (
-                    'NRC DH BALAGHAT (NRC)'
-                )
-
-                sam_count += 1
-
-                logging.info(f"🧐🧐💣 Student with name : {row['name']} is found to be SAM, and not going to change, because less than SAM count.")
-
-            # REMAINING SAM -> MODIFY VALUES + CHC
-            else:
-
-                age_years = result["age_months"] / 12
-
-                new_weight, new_height = (
-                    get_corrected_values(age_years)
-                )
-
-                # MODIFY VALUES
-                df.loc[idx, 'weight'] = new_weight
-
-                df.loc[idx, 'height'] = new_height
-
-                # SEND TO CHC
-                df.loc[idx, 'facilityType'] = (
-                    'Block Level Facility'
-                )
-
-                df.loc[idx, 'facilityName'] = (
-                    'CHC LALBARRA (Block Level Facility)'
-                )
-
-                logging.info(f"📢📢📢 Student with name : {row['name']} is SAM but count exceeds so new weight and height is {new_weight}, and {new_height} respectively")
+            df.loc[idx, 'facilityName'] = (
+                'CHC LALBARRA (Block Level Facility)'
+            )
 
         # --------------------------------
         # DEIC CONDITION

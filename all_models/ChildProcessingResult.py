@@ -6,4 +6,3 @@ class ChildProcessingResult:
     father_name: str
     outcome: str
     message: str
-    

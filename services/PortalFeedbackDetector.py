@@ -58,6 +58,19 @@ class PortalFeedbackDetector:
         validation_errors: list[str] | None = Maybe more than one string is present, I want to show the user all the string at once, so that 
         they could correct in one go
         """
+        IGNORED_MESSAGES = {
+            'Health status is set to "Identified" because defects have been detected.'
+        }
+
+        VALIDATION_KEYWORDS = {
+            "required",
+            "invalid",
+            "mandatory",
+            "please",
+            "select",
+            "enter",
+            "must"
+        }
         validation_errors = []
 
         error_elements = self.page.locator("p[class*='text-red-'], span[class*='text-red-']")
@@ -79,7 +92,14 @@ class PortalFeedbackDetector:
                 if text == "*":
                     continue
 
-                validation_errors.append(text)
+                if text in IGNORED_MESSAGES:
+                    continue
+
+                if any(
+                    keyword in text.lower()
+                    for keyword in VALIDATION_KEYWORDS
+                ):
+                    validation_errors.append(text)
 
             except Exception as e:
                 logging.error(f"Error occured while getting validation error as : {e}")

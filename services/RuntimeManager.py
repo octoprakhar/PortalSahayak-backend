@@ -226,7 +226,7 @@ class RunTimeManager:
             ## Runtime data
             ActiveJobStore.remove_job(job_id=self.job_id)
             ## Persistant data
-            JobManager.clean_job(job_id=self.job_id)
+            # JobManager.clean_job(job_id=self.job_id)
             return
         
 

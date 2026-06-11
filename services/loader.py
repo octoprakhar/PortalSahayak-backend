@@ -9,7 +9,6 @@ import numpy as np
 
 from all_models.child_models import Child 
 from services.ChildDataValidation import ChildDataValidation
-from services.SamClassifier import SAMClassifier
 from utils.loaderUtils import get_age,get_head_circumference, clean_dob, normalize_hb,normalize_gender,fill_disease_from_nan, standardize_facility
 
 
@@ -145,8 +144,7 @@ class ChildLoader:
         logging.info("Random diseases got set")
 
         ## Mapping faculty name with DEIC, NRC, CHC(default)
-        samClassifier = SAMClassifier()
-        trans_df = standardize_facility(trans_df,samClassifier,2)
+        trans_df = standardize_facility(trans_df)
         logging.info("Facilities got mapped wrt facility Name")
         logging.info(
     f"💣💣 Got number of SAM students as {trans_df[trans_df['facilityType']=='NRC'].shape[0]}"
