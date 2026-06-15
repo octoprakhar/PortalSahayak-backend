@@ -23,7 +23,8 @@ def launch_browser_job(job_id:str):
     try:
         runtime_manager.launch_browser_instance()
         runtime_manager.login_user()
-        runtime_manager.start_select_institution_stage()
+        resulted_institution = runtime_manager.start_select_institution_stage()
+        return resulted_institution
     except Exception as e:
         JobManager.update_job_status(
             job_id=job_id,

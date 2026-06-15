@@ -4,6 +4,8 @@ import uuid
 import json
 from datetime import datetime
 from typing import Optional
+import logging
+import asyncio
 
 from utils.routerUtils import append_log, launch_browser_job, open_institution_page,start_child_screening
 from services.JobManager import JobManager
@@ -81,13 +83,35 @@ async def create_job(
     job_id = await jobManager.create_job()
 
     ## Launching browser
-    background_tasks.add_task(
-    launch_browser_job,
-    job_id
-    )
+    """
+    I am running for now this launch browser job without background task
+    because for now I need to send the API response back to the user of the list of institutions on that date
+    TODO: Put this in background task only, and use websocket to send the date later.
+    """
+    data = []
+
+    
+    # try:
+
+    #     data = launch_browser_job(job_id=job_id)
+    # except Exception as e:
+    #     logging.exception(f"Error occured as {e}")
+    # # background_tasks.add_task(
+    # # launch_browser_job,
+    # # job_id
+    # # )
+
+    try:
+        data = await asyncio.to_thread(
+            launch_browser_job,
+            job_id
+        )
+    except Exception as e:
+        logging.exception(f"Error occured as {e}")
 
     return {
-        "job_id": job_id
+        "job_id": job_id,
+        "data" : data
 
     }
 
@@ -98,7 +122,7 @@ def get_status(job_id: str):
         jobStatus = JobManager.get_current_status(job_id)
         return {"status": jobStatus.value}
     except Exception as e:
-        return {"status": JobStatus.FAILED.value, "error": e.message}
+        return {"status": JobStatus.FAILED.value, "error": str(e)}
     
 
 @router.get("/jobs/{job_id}/logs")

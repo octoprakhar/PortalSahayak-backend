@@ -15,6 +15,7 @@ from workflow.LoginPage import LoginPage
 from all_models.FeedbackResult import FeedbackResult, FeedbackOutcome
 from all_models.ChildProcessingResult import ChildProcessingResult
 from utils.datetimeUtils import date_to_month_year
+from workflow.InstitutionSelectionPage import InstitutionSelectionPage
 
 
 class RunTimeManager:
@@ -148,14 +149,13 @@ class RunTimeManager:
         I don't think in future, user will use in memory cache to give the page instance by intself when api is called, so later it may not 
         be very useful
         """
+        
         runtime_job = ActiveJobStore.get_job(job_id=self.job_id)
 
         if runtime_job is None:
             raise ValueError(f"Job {self.job_id} not found")
         
         page:Page = runtime_job.page
-
-        screening = page.locator('[title="Screening"]').wait_for(timeout=3000)
 
         try:
             page.locator('[title="Screening"]').wait_for(
@@ -179,21 +179,28 @@ class RunTimeManager:
 
         try:
             date = JobManager.get_screening_date(self.job_id)
-        except Exception as e:
-            raise RuntimeError(e.message)
-        
-        ## Get Month-yyyy format of year
-        month = date_to_month_year(date_str=date)
-        
-        page.locator('[title="Screening"]').click()
-        page.wait_for_timeout(5000)
-        page.locator('[name="financialMonth"]').select_option(label=month)
-        page.get_by_role('button',name='Search').click()
-        JobManager.add_log(job_id=self.job_id, log=JobLog(timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),message="Successfully opened the institution page, Waiting for user to select institution",type=LogType.SUCCESS))
+            page.locator('[title="Screening"]').click()
+            page.wait_for_timeout(5000)
+            institutionSelection = InstitutionSelectionPage(page=page, date=date)
+            resulted_institution = institutionSelection.get_month_data()
+            
+            JobManager.add_log(job_id=self.job_id, log=JobLog(timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),message="Successfully opened the institution page, Waiting for user to select institution",type=LogType.SUCCESS))
 
-        ## Update the status
-        JobManager.update_job_status(status=JobStatus.WAITING_INSTITUTION,job_id=self.job_id)
-        JobManager.add_log(job_id=self.job_id, log=JobLog(timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),message="Waiting for user to select the intitution"))
+            ## Update the status
+            JobManager.update_job_status(status=JobStatus.WAITING_INSTITUTION,job_id=self.job_id)
+            JobManager.add_log(job_id=self.job_id, log=JobLog(timeStamp=datetime.now(ZoneInfo("Asia/Kolkata")).isoformat(),message="Waiting for user to select the intitution"))
+            return resulted_institution
+
+        except Exception as e:
+            raise RuntimeError(str(e))
+        
+        # ## Get Month-yyyy format of year
+        # month = date_to_month_year(date_str=date)
+        
+        # page.locator('[title="Screening"]').click()
+        # page.wait_for_timeout(5000)
+        # page.locator('[name="financialMonth"]').select_option(label=month)
+        # page.get_by_role('button',name='Search').click()
         
 
     def start_child_screening(self):
