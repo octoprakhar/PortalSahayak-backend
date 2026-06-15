@@ -25,7 +25,7 @@ async def create_job(
     background_tasks: BackgroundTasks,
     address: Optional[str] = Form(None),
     mobileNumber: Optional[str] = Form(None),
-    month: Optional[str] = Form(None),
+    date: Optional[str] = Form(None),
     userName: Optional[str] = Form(None),
     password: Optional[str] = Form(None),
     file: UploadFile | None = File(None)
@@ -64,7 +64,7 @@ async def create_job(
             detail="Password is required"
         )
     
-    if not month or not month.strip():
+    if not date or not date.strip():
         raise HTTPException(
             status_code=400,
             detail="Screening month is required"
@@ -77,7 +77,7 @@ async def create_job(
         )
 
     ## Create the job
-    jobManager = JobManager(address=address,mobileNumber=mobileNumber,file=file,month=month, userName=userName, password=password)
+    jobManager = JobManager(address=address,mobileNumber=mobileNumber,file=file,date=date, userName=userName, password=password)
     job_id = await jobManager.create_job()
 
     ## Launching browser

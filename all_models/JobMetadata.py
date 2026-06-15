@@ -11,5 +11,5 @@ class JobMetadata:
     password: str
     address: str
     mobile_number: str
-    month: str
+    date: str
     uploaded_file: str = "uploaded.csv"

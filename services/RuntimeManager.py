@@ -14,6 +14,7 @@ from workflow.workflow import ScreeningWorkflow
 from workflow.LoginPage import LoginPage
 from all_models.FeedbackResult import FeedbackResult, FeedbackOutcome
 from all_models.ChildProcessingResult import ChildProcessingResult
+from utils.datetimeUtils import date_to_month_year
 
 
 class RunTimeManager:
@@ -107,7 +108,7 @@ class RunTimeManager:
         loginResult: FeedbackResult = loginPage.login(userName=userName, password=password)
 
         if loginResult.outcome == FeedbackOutcome.SUCCESS:
-            JobManager.update_job_status(status=JobStatus.WAITING_INSTITUTION,job_id=self.job_id)
+            # JobManager.update_job_status(status=JobStatus.WAITING_INSTITUTION,job_id=self.job_id)
         
             JobManager.add_log(
                     job_id=self.job_id,
@@ -177,9 +178,12 @@ class RunTimeManager:
         ## Verify first that user has logged in or not, if not send user an error log of failing and ask for retry
 
         try:
-            month = JobManager.get_screening_month(self.job_id)
+            date = JobManager.get_screening_date(self.job_id)
         except Exception as e:
             raise RuntimeError(e.message)
+        
+        ## Get Month-yyyy format of year
+        month = date_to_month_year(date_str=date)
         
         page.locator('[title="Screening"]').click()
         page.wait_for_timeout(5000)

@@ -19,7 +19,7 @@ class JobManager:
     """
     This class helps with doing CRUD operations across a particular job. It only does persistant work
     """
-    def __init__(self, address: str, mobileNumber: str, file: UploadFile, month: str, userName: str, password: str):
+    def __init__(self, address: str, mobileNumber: str, file: UploadFile, date: str, userName: str, password: str):
         
         """
         It will initiate the JobManager class, with given address, mobileNumber, 
@@ -29,7 +29,7 @@ class JobManager:
 
         self.address = address
         self.mobileNumber = mobileNumber
-        self.month = month
+        self.date = date
         self.file = file
         self.userName = userName
         self.password = password
@@ -65,7 +65,7 @@ class JobManager:
             raise RuntimeError("Can't create the file that is uploaded by the user") from e
 
         ## Now making the file to store persistant data regarding job
-        job_metadata = JobMetadata(job_id=job_id, status=JobStatus.IDLE.value, created_at=datetime.utcnow().isoformat(), address=self.address, mobile_number=self.mobileNumber,month=self.month, userName=self.userName, password=self.password)
+        job_metadata = JobMetadata(job_id=job_id, status=JobStatus.IDLE.value, created_at=datetime.utcnow().isoformat(), address=self.address, mobile_number=self.mobileNumber,date=self.date, userName=self.userName, password=self.password)
         with open(job_dir / "job.json", "w", encoding="utf-8") as f:
             json.dump(asdict(job_metadata), f, indent=2)
 
@@ -262,7 +262,7 @@ class JobManager:
         
 
     @staticmethod
-    def get_screening_month(job_id: str) -> str:
+    def get_screening_date(job_id: str) -> str:
         """
         Returns the screening month of the given job.
 
@@ -284,7 +284,7 @@ class JobManager:
             with open(job_file, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            return data["month"]
+            return data["date"]
 
         except KeyError as e:
             raise RuntimeError(
