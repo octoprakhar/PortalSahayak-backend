@@ -9,10 +9,11 @@ class Events(Enum):
     2. LOGIN_COMPLETED:  It will be fired when we had completed the login of the user, using the username and password they had provided
     3. INSTITUTION_FETCHED: It will be triggered when we entered the institution page, and get the list of institutions of that screening date
     user provides.
-    4. JOB_FAILED: If any error occured, and we can't move forward.
-    5. JOB_PAUSED: If the server of the government portal is very slow, and entries are taking hell lot of time, so just stop where we are.
+    4. INSTITUTION_SELECTED: It will be triggered when user has sent the selected institution back to us.
+    5. JOB_FAILED: If any error occured, and we can't move forward.
     6. REPORT_CREATED: When all children entries are done and we have created all the report, success_report, and failure_report of students
     with all the data columns we needed.
+    7. LOG_MESSAGE: It is the event that will be thrown when new log message must needed to get written.
 
     NOTE: For v1, JOB_CREATED,LOGIN_COMPLETED,INSTITUTION_FETCHED: is considered the state with api call to 'create-job', and the 'REPORT_CREATED'
     will be for api request 'start-screening'.
@@ -20,6 +21,7 @@ class Events(Enum):
     WORKER_STARTED = "worker_started"
     LOGIN_COMPLETED = "login_completed"
     INSTITUTION_FETCHED = "intitution_fetched"
+    INSTITUTION_SELECTED = "institution_selected"
     JOB_FAILED = "job_failed"
-    JOB_PAUSED= "job_paused"
     REPORT_CREATED= "report_created"
+    LOG_MESSAGE="log_message"

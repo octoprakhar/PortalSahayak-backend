@@ -1,3 +1,5 @@
+import logging
+
 from all_models.WorkerEvent import WorkerEvent
 from worker.EventListnerAbstract import EventListnerAbstract
 
@@ -31,7 +33,12 @@ class EventBus:
         """
         New event has arrived call all the event listners handle() method
         """
-        for listner in self.event_listners:
-            listner.handle(event)
+        for listener in self.event_listners:
+            try:
+                listener.handle(event)
+            except Exception:
+                logging.exception(
+                    f"{listener} failed"
+                )
 
 

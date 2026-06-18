@@ -18,7 +18,14 @@ from constants.institution_type import InstitutionType
 
 from worker_repository.ActiveWorkerStore import ActiveWorkerStore
 from all_models.Message import Message
+from all_models.WorkerContext import WorkerContext
+from worker.MetadataProvider import MetadataProvider
+from worker_metadata_providers.FileMetadataProvider import FileMetadataProvider
 from constants.Commands import Commands
+
+from event_listners.CleanupListner import CleanupListner
+from event_listners.PersistenceListener import PersistenceListener
+from event_listners.PrintListner import PrintListner
 
 
 router = APIRouter()
@@ -93,7 +100,21 @@ async def create_job(
         ## Create the job
         jobManager = JobManager(address=address,mobileNumber=mobileNumber,file=file,date=date, userName=userName, password=password)
         job_id = await jobManager.create_job()
-        worker = ActiveWorkerStore.create_worker(job_id=job_id)
+        
+        workerMetadataProvider: MetadataProvider = FileMetadataProvider()
+        worker_context : WorkerContext = workerMetadataProvider.get_context(job_id=job_id)
+        worker = ActiveWorkerStore.create_worker(job_id=job_id, worker_context=worker_context)
+
+        ## Attach event listners
+        persistenceListner = PersistenceListener()
+        cleanupListner = CleanupListner()
+        # For testing Purpose
+        printListner = PrintListner()
+
+        worker.events.subscribe(listner=cleanupListner)
+        worker.events.subscribe(listner=persistenceListner)
+        worker.events.subscribe(listner=printListner)
+
         worker.start()
         worker.send(Message(job_id=job_id, command=Commands.CREATE_JOB, payload={}))
     except Exception as e:

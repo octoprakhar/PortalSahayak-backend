@@ -249,3 +249,15 @@ Workers remain agnostic of the broader system context; they publish execution ev
 Playwright runtime objects (Browser, Context, Page) are allocated to, mutated by, and collected by exactly **one** worker thread. This eliminates cross-thread pollution and makes resource lifecycles deterministic.
 
 ```
+
+- Introduced Worker actor model with dedicated mailbox
+- Added command-driven workflow execution
+- Added per-worker EventBus and WorkerEvent system
+- Implemented EventListener abstraction
+- Added PersistenceListener for status and log persistence
+- Added CleanupListener for worker lifecycle cleanup
+- Decoupled RuntimeManager from JobManager
+- Introduced WorkerContext and MetadataProvider abstraction
+- Removed direct runtime-persistence coupling
+- Established producer-consumer architecture between API and workers
+- Verified success and failure flows through event-driven listeners

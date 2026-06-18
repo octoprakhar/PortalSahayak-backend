@@ -1,5 +1,6 @@
 import logging
 from playwright.sync_api import Page
+from typing import Callable
 
 from services.loader import ChildLoader
 from services.SamManager import SamManager
@@ -9,14 +10,16 @@ from all_models.SearchStudentModels import SearchResult
 from workflow.ExistingChildrenWithoutData import ExistingChildrenWithoutData
 from all_models.FeedbackResult import FeedbackResult,FeedbackOutcome
 from all_models.ChildProcessingResult import ChildProcessingResult
+from constants.log_type import LogType
 
 
 class ScreeningWorkflow:
-    def __init__(self, page:Page, job_id: str = None):
+    def __init__(self, page:Page, logger:Callable[[str,LogType],None] = None, job_id: str = None):
         self.page = page
         self.loader = ChildLoader()
         self.job_id = job_id
         self.sam_manager = SamManager() ## Each workflow will get one sam manager
+        self.logger = logger
 
     def run(self, excel_path, defaultContactNum: str, address: str = "") -> list[ChildProcessingResult]:
         logging.info("Data Loading started")

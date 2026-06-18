@@ -1,17 +1,13 @@
 # To use this class after creating browser instant, and entering in the "Adding" page
 # This class is simply saying "give me the page object, and the child and I will save it"
 import logging
-from datetime import datetime
 from playwright.sync_api import Page,Locator
-from zoneinfo import ZoneInfo
-import random
-import time
 
+from typing import Callable
 
 from all_models.child_models import Child
 from services.PortalFeedbackDetector import PortalFeedbackDetector
 from services.SearchStudent import SearchStudent
-from services.JobManager import JobManager
 from all_models.FeedbackResult import FeedbackResult,FeedbackOutcome
 from constants.log_type import LogType
 from all_models.JobLogs import JobLog
@@ -19,11 +15,12 @@ from utils.loaderUtils import get_age,get_corrected_values
 from services.SamManager import SamManager
 
 class ChildScreeningPage:
-    def __init__(self, page:Page, child:Child,sam_manager : SamManager, job_id: str = None):
+    def __init__(self, page:Page, child:Child,sam_manager : SamManager, logger: Callable[[str,LogType],None] = None, job_id: str = None):
         self.page = page
         self.child = child
         self.job_id = job_id
         self.sam_manager = sam_manager
+        self.logger = logger
         self.age = get_age(self.child.dob)
         self.is_to_select_nrc = False
 
@@ -214,17 +211,10 @@ class ChildScreeningPage:
             logging.info("Can't find job ID")
             return
 
-        JobManager.add_log(
-            self.job_id,
-            JobLog(
-                timeStamp=datetime.now(
-                    ZoneInfo("Asia/Kolkata")
-                ).isoformat(),
-                type=log_type,
-                message=message
-            )
-        )
-
+        if self.logger:
+            self.logger(message,log_type)
+            return
+        
     def _log_child(self, log_type: LogType, message: str):
         self._log_job(
             log_type,
@@ -577,16 +567,9 @@ class ChildScreeningPage:
 
         
         if self.job_id:
-            JobManager.add_log(
-            self.job_id,
-            JobLog(
-                timeStamp=datetime.now(
-                    ZoneInfo("Asia/Kolkata")
-                ).isoformat(),
-                type=LogType.INFO,
-                message=f"{self.child.name} C/o- {self.child.fatherName} : is already exist."
-            )
-        )
+
+            if self.logger:
+                self.logger(f"{self.child.name} C/o- {self.child.fatherName} : is already exist.",LogType.INFO)
 
 
         ## Check if target of students are completed then just press 'Yes proceed button automatically'

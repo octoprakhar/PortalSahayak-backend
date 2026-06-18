@@ -1,5 +1,6 @@
 from worker.Worker import Worker
 
+from all_models.WorkerContext import WorkerContext
 
 class ActiveWorkerStore:
     """
@@ -13,7 +14,7 @@ class ActiveWorkerStore:
     active_workers: dict[str,Worker] = {}
 
     @classmethod
-    def create_worker(cls, job_id: str) -> Worker:
+    def create_worker(cls, job_id: str, worker_context: WorkerContext) -> Worker:
         """
         It just creates the new worker
 
@@ -21,7 +22,7 @@ class ActiveWorkerStore:
         worker: Worker = Worker instance of the current worker, so that it can call and send message to it's mailbox
         """
         try: 
-            worker_instance = Worker(job_id=job_id)
+            worker_instance = Worker(job_id=job_id, worker_context=worker_context)
             cls.active_workers[job_id] = worker_instance
 
             return worker_instance
