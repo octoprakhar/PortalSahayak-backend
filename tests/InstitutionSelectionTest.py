@@ -7,6 +7,8 @@ from workflow.workflow import ScreeningWorkflow
 import logging
 
 from workflow.InstitutionSelectionPage import InstitutionSelectionPage
+from all_models.InstitutionData import InstitutionData
+from constants.institution_type import InstitutionType
 
 logging.basicConfig(
     level=logging.INFO,
@@ -52,4 +54,9 @@ with sync_playwright() as p:
     institutionSelection = InstitutionSelectionPage(date=random_past_date_current_month_iso(),page=page)
     required_institutions = institutionSelection.get_month_data()
     print(required_institutions)
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(3000)
+    
+    required_institution = InstitutionData(institution_plan_id=152514,institution_name="TEKADI NAHARTOLA 4",planned_date="2026-06-05T00:00:00.000Z",institution_type=InstitutionType.AWC)
+    print("starting selecting the institution")
+    institutionSelection.select_institution(institution_data=required_institution, is_ANM_present=False)
+    page.wait_for_timeout(5000)

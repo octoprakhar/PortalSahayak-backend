@@ -82,7 +82,21 @@ class InstitutionSelectionPage:
         Returns:
         None
         """
-        pass
+        cards = self.page.locator(
+            "div:has(span.font-medium):has(p.text-slate-500)"
+        )
+
+        for i in range(cards.count()):
+            card = cards.nth(i)
+
+            role = card.locator("p").inner_text().strip().upper()
+
+            if not is_ANM_present and "ANM" in role:
+                continue
+
+            card.click()
+
+        self.page.get_by_role("button", name="Submit & Start").click()
 
     def _get_institutions_by_date(self, all_institutions: list[InstitutionData]) -> list[InstitutionData]:
         """
@@ -100,6 +114,66 @@ class InstitutionSelectionPage:
             for institution in all_institutions
             if institution.planned_date == formatted_date
         ]
+    
+    def _select_institution_by_name_and_date(
+        self,
+        institute_name: str,
+        visit_date: str,
+    ) -> bool:
+        page = self.page
+
+        visit_format_date = iso_to_ddmmyyyy(visit_date)
+
+
+        while True:
+            page.wait_for_selector("table tbody tr")
+
+            # Only rows containing the institution name
+            candidate_rows = page.locator(
+                f'table tbody tr:has-text("{institute_name}")'
+            )
+
+            candidate_count = candidate_rows.count()
+
+
+            for i in range(candidate_count):
+                row = candidate_rows.nth(i)
+
+                row_text = row.inner_text()
+
+
+                # Verify date also matches
+                if visit_format_date not in row_text:
+                 continue
+
+
+                # Prefer Start Screening
+                for title in ("Start Screening", "View Students"):
+                    button = row.locator(f'[title="{title}"]')
+
+                    if button.count() > 0:
+                        print(f"Clicking '{title}'")
+
+                        button.first.scroll_into_view_if_needed()
+                        button.first.click()
+
+                        return True
+
+
+            # Pagination
+            next_btn = page.get_by_role("button", name="Next")
+
+            if next_btn.count() == 0 or not next_btn.is_enabled():
+                break
+
+            next_btn.click()
+
+            # Better than wait_for_timeout()
+            page.wait_for_load_state("networkidle")
+
+
+        return False
+    
 
     def get_month_data(self) -> list[InstitutionData]:
         """
@@ -114,7 +188,7 @@ class InstitutionSelectionPage:
             ##Step 1: Select the month and then click select, 
             month = date_to_month_year(self.date)
             self.page.locator('[name="financialMonth"]').select_option(label=month)
-            self.page.get_by_role('button',name='Search').click()
+            # self.page.get_by_role('button',name='Search').click()
 
             ## If can't select that specific date / month throw error "Invalid Date was given"
 
@@ -144,15 +218,19 @@ class InstitutionSelectionPage:
     def select_institution(self,institution_data:InstitutionData, is_ANM_present: bool = True):
         try:
 
+            # Step 1: select institution by name
+            self._select_institution_by_name_and_date(institute_name=institution_data.institution_name, visit_date=institution_data.planned_date)
+
+            # print("Now checking for the attendance block...")
             ## step 2: Check whether attendance for institution is already done(it means it was already screening), or we need to do it
-            is_attendance_popup_shown = self.page.locator().is_visible()
+            is_attendance_popup_shown = self.page.get_by_role("heading",name="Mark Attendance to Start Screening").is_visible()
 
             ## If attendance not done, do the attendance stuff
-            if not is_attendance_popup_shown:
+            if is_attendance_popup_shown:
+                # print("Trying to mark Attendance")
                 self._institution_attendance(institution_data=institution_data, is_ANM_present=is_ANM_present)
 
-            ## Click final button to start screening
-            pass
         except Exception as e:
+            # print(str(e))
             logging.exception(f"Error occured while trying to select the given institution name: \n{e}")
             raise Exception("Error occured while trying to open the institution")

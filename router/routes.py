@@ -13,6 +13,12 @@ from services.RuntimeManager import RunTimeManager
 from constants.job_status import JobStatus
 import random
 from all_models.JobLogs import JobLog
+from all_models.InstitutionData import InstitutionData
+from constants.institution_type import InstitutionType
+
+from worker_repository.ActiveWorkerStore import ActiveWorkerStore
+from all_models.Message import Message
+from constants.Commands import Commands
 
 
 router = APIRouter()
@@ -78,40 +84,24 @@ async def create_job(
             detail="File is required"
         )
 
-    ## Create the job
-    jobManager = JobManager(address=address,mobileNumber=mobileNumber,file=file,date=date, userName=userName, password=password)
-    job_id = await jobManager.create_job()
-
-    ## Launching browser
-    """
-    I am running for now this launch browser job without background task
-    because for now I need to send the API response back to the user of the list of institutions on that date
-    TODO: Put this in background task only, and use websocket to send the date later.
-    """
-    data = []
-
     
-    # try:
 
-    #     data = launch_browser_job(job_id=job_id)
-    # except Exception as e:
-    #     logging.exception(f"Error occured as {e}")
-    # # background_tasks.add_task(
-    # # launch_browser_job,
-    # # job_id
-    # # )
+    ## Launching worker
+    
 
     try:
-        data = await asyncio.to_thread(
-            launch_browser_job,
-            job_id
-        )
+        ## Create the job
+        jobManager = JobManager(address=address,mobileNumber=mobileNumber,file=file,date=date, userName=userName, password=password)
+        job_id = await jobManager.create_job()
+        worker = ActiveWorkerStore.create_worker(job_id=job_id)
+        worker.start()
+        worker.send(Message(job_id=job_id, command=Commands.CREATE_JOB, payload={}))
     except Exception as e:
         logging.exception(f"Error occured as {e}")
 
     return {
         "job_id": job_id,
-        "data" : data
+        "data" : [InstitutionData(institution_plan_id=152514,institution_name="TEKADI NAHARTOLA 4",planned_date="2026-06-05T00:00:00.000Z",institution_type=InstitutionType.AWC)] ## Only for now It will be received to the user through websocket
 
     }
 
@@ -158,7 +148,7 @@ def get_institutions_list(background_task: BackgroundTasks,job_id: Optional[str]
 
 
 @router.post("/start-screening")
-def start_job_screeninhg(background_task: BackgroundTasks,job_id: Optional[str] = Form(None)):
+def start_job_screeninhg(background_task: BackgroundTasks,job_id: Optional[str] = Form(None),institution_plan_id: Optional[str] = Form(None),institution_name: Optional[str] = Form(None),institution_type_val: Optional[str] = Form(None),planned_date: Optional[str] = Form(None),is_anm_present: bool = Form(False)):
     """
     Request:
     job_id: str
@@ -173,9 +163,37 @@ def start_job_screeninhg(background_task: BackgroundTasks,job_id: Optional[str] 
             status_code=400,
             detail="Job ID is required"
         )
+    
+    if not institution_plan_id or not institution_plan_id.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Institution ID is required"
+        )
+    
+    if not institution_name or not institution_name.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Institution name is required"
+        )
+    
+    if not institution_type_val or not institution_type_val.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Institution type is required"
+        )
+    
+    if not planned_date or not planned_date.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Planned date is required"
+        )
+    
+    institution_data = InstitutionData(institution_plan_id=institution_plan_id, institution_name=institution_name, institution_type=InstitutionType(value=institution_type_val), planned_date=planned_date)
+
 
     try:
-        background_task.add_task(start_child_screening,job_id)
+        worker = ActiveWorkerStore.get_worker(job_id=job_id)
+        worker.send(Message(job_id=job_id, command=Commands.INSTITUTION_SELECTED, payload={"institution_data":institution_data}))
         return {"status":"ok"}
     except Exception as e:
-        return {"error":e.message}
+        return {"error":str(e)}

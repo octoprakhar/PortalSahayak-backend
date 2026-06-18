@@ -9,6 +9,8 @@ from all_models.JobLogs import JobLog
 from constants.job_status import JobStatus
 from constants.log_type import LogType
 
+from all_models.InstitutionData import InstitutionData
+
 
 from services.RuntimeManager import RunTimeManager
 
@@ -48,6 +50,6 @@ def open_institution_page(job_id: str):
     runtime_manager = RunTimeManager(job_id=job_id)
     runtime_manager.start_select_institution_stage()
 
-def start_child_screening(job_id: str):
+def start_child_screening(job_id: str, institution_data: InstitutionData | None = None, is_ANM_present: bool = False ):
     runtime_manager = RunTimeManager(job_id=job_id)
-    runtime_manager.start_child_screening()
+    runtime_manager.start_child_screening(is_ANM_Present=is_ANM_present, institution_data=institution_data)

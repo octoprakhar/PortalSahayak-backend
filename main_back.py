@@ -28,7 +28,7 @@ with sync_playwright() as p:
     
     #Adding new child now
     screeningWorkflow = ScreeningWorkflow(page=page)
-    screeningWorkflow.run("./Awc3Kanki.csv","7974407712","Kanki")
+    screeningWorkflow.run("./AWC gara puri.csv","6265449307","Garapuri")
 
 
     input("Press enter to close")

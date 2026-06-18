@@ -8,7 +8,6 @@ from constants.job_status import JobStatus
 from services.JobManager import JobManager
 from all_models.JobLogs import JobLog
 from constants.log_type import LogType
-from services.ActiveJobStore import ActiveJobStore
 from all_models.RuntimeJob import RuntimeJob
 from workflow.workflow import ScreeningWorkflow
 from workflow.LoginPage import LoginPage
@@ -16,6 +15,7 @@ from all_models.FeedbackResult import FeedbackResult, FeedbackOutcome
 from all_models.ChildProcessingResult import ChildProcessingResult
 from utils.datetimeUtils import date_to_month_year
 from workflow.InstitutionSelectionPage import InstitutionSelectionPage
+from all_models.InstitutionData import InstitutionData
 
 
 class RunTimeManager:
@@ -31,6 +31,7 @@ class RunTimeManager:
         To initialize it, we need job_id, a job to Run, it must be in JobStatus.IDLE state, that means it has formed and ready to run.
         """
         self.job_id = job_id
+
 
     def launch_browser_instance(self) -> RuntimeJob:
         """
@@ -49,7 +50,7 @@ class RunTimeManager:
         page = context.new_page()
         page.goto("https://rbsk.mohfw.gov.in/RBSK/login")
 
-        ActiveJobStore.add_job(job_id=self.job_id, playwright=p,browser=browser,context=context, page=page)
+        # ActiveJobStore.add_job(job_id=self.job_id, playwright=p,browser=browser,context=context, page=page)
         JobManager.update_job_status(status=JobStatus.STARTING, job_id=self.job_id)
         JobManager.add_log(job_id=self.job_id, log=JobLog(timeStamp=datetime.now(
                         ZoneInfo("Asia/Kolkata")
@@ -57,16 +58,16 @@ class RunTimeManager:
 
         return RuntimeJob(playwright=p, browser=browser, context=context,page=page)
     
-    def login_user(self):
+    def login_user(self, page:Page) -> list[InstitutionData]:
         """
         This will automatically login user, get userName and password from from jobMetadata
         """
-        runtime_job = ActiveJobStore.get_job(job_id=self.job_id)
+        # runtime_job = ActiveJobStore.get_job(job_id=self.job_id)
 
-        if runtime_job is None:
-            raise ValueError(f"Job {self.job_id} not found")
+        # if runtime_job is None:
+        #     raise ValueError(f"Job {self.job_id} not found")
         
-        page:Page = runtime_job.page
+        # page:Page = runtime_job.page
         
         try:
             page.get_by_placeholder("Username").wait_for(
@@ -98,10 +99,13 @@ class RunTimeManager:
                     type=LogType.SUCCESS
                 )
             )
-        
-        metadata = JobManager.get_job_metadata(self.job_id)
-        userName = metadata.userName
-        password = metadata.password
+        try:
+            metadata = JobManager.get_job_metadata(self.job_id)
+            userName = metadata.userName
+            password = metadata.password
+        except Exception as e:
+            raise Exception(str(e))
+            print(str(e))
 
         screening = page.locator('[title="Screening"]')
         loginPage = LoginPage(page=page,success_locator=screening)
@@ -141,7 +145,7 @@ class RunTimeManager:
 
 
 
-    def start_select_institution_stage(self):
+    def start_select_institution_stage(self, page:Page):
         """
         It will help the user to open the "Select Institution" screen using month which will be of type like this "May 2026".
         Update the job status to JobStataus.WAITING_INSTITUTION
@@ -150,12 +154,12 @@ class RunTimeManager:
         be very useful
         """
         
-        runtime_job = ActiveJobStore.get_job(job_id=self.job_id)
+        # runtime_job = ActiveJobStore.get_job(job_id=self.job_id)
 
-        if runtime_job is None:
-            raise ValueError(f"Job {self.job_id} not found")
+        # if runtime_job is None:
+        #     raise ValueError(f"Job {self.job_id} not found")
         
-        page:Page = runtime_job.page
+        # page:Page = runtime_job.page
 
         try:
             page.locator('[title="Screening"]').wait_for(
@@ -203,20 +207,27 @@ class RunTimeManager:
         # page.get_by_role('button',name='Search').click()
         
 
-    def start_child_screening(self):
+    def start_child_screening(self, page: Page, institution_data: InstitutionData | None = None, is_ANM_Present: bool = True):
         """
         It will Trigger ChildScreening class to start screening, and change the job status to "RUNNING"
         
         """
         ## Check first whether a person has selected the institution by check "Add New Child" Button is present on the screen or not.
-        runtime_job = ActiveJobStore.get_job(job_id=self.job_id)
+        # runtime_job = ActiveJobStore.get_job(job_id=self.job_id)
 
-        if runtime_job is None:
-            raise ValueError(f"Job {self.job_id} not found")
+        # if runtime_job is None:
+        #     raise ValueError(f"Job {self.job_id} not found")
         
-        page:Page = runtime_job.page
+        # page:Page = runtime_job.page
+
+        
 
         try:
+            ##TODO: Call Get institution first because we are now in institution page so yeah....
+            if institution_data:
+                date = JobManager.get_screening_date(self.job_id)
+                institutionPage = InstitutionSelectionPage(page=page, date=date)
+                institutionPage.select_institution(institution_data=institution_data, is_ANM_present=is_ANM_Present)
             page.get_by_role('button',name="Add New Child").wait_for(
                 state="visible",
                 timeout=3000
@@ -275,7 +286,7 @@ class RunTimeManager:
 
             ## TODO Cleanup of job is required
             ## Runtime data
-            ActiveJobStore.remove_job(job_id=self.job_id)
+            # ActiveJobStore.remove_job(job_id=self.job_id)
             ## Persistant data
             JobManager.clean_job(job_id=self.job_id)
             return
@@ -301,7 +312,7 @@ class RunTimeManager:
             JobManager.update_job_status(JobStatus.COMPLETED, job_id=self.job_id)
 
             ## Remove job from active job
-            ActiveJobStore.remove_job(job_id=self.job_id)
+            # ActiveJobStore.remove_job(job_id=self.job_id)
             
 
         except Exception as e:
@@ -320,7 +331,7 @@ class RunTimeManager:
             JobManager.update_job_status(JobStatus.FAILED,self.job_id)
             ## TODO job cleanup is required
             ## Runtime data
-            ActiveJobStore.remove_job(job_id=self.job_id)
+            # ActiveJobStore.remove_job(job_id=self.job_id)
             ## Persistant data
             # JobManager.clean_job(job_id=self.job_id)
             return
