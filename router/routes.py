@@ -1,31 +1,19 @@
 from fastapi import APIRouter,BackgroundTasks, File, Form, UploadFile, HTTPException
-from pathlib import Path
-import uuid
-import json
-from datetime import datetime
 from typing import Optional
 import logging
-import asyncio
 
 from utils.routerUtils import append_log, launch_browser_job, open_institution_page,start_child_screening
 from services.JobManager import JobManager
-from services.RuntimeManager import RunTimeManager
 from constants.job_status import JobStatus
 import random
-from all_models.JobLogs import JobLog
 from all_models.InstitutionData import InstitutionData
 from constants.institution_type import InstitutionType
 
 from worker_repository.ActiveWorkerStore import ActiveWorkerStore
 from all_models.Message import Message
-from all_models.WorkerContext import WorkerContext
-from worker.MetadataProvider import MetadataProvider
-from worker_metadata_providers.FileMetadataProvider import FileMetadataProvider
+from factory.WorkerFactory import WorkerFactory
 from constants.Commands import Commands
 
-from event_listners.CleanupListner import CleanupListner
-from event_listners.PersistenceListener import PersistenceListener
-from event_listners.PrintListner import PrintListner
 
 
 router = APIRouter()
@@ -101,30 +89,20 @@ async def create_job(
         jobManager = JobManager(address=address,mobileNumber=mobileNumber,file=file,date=date, userName=userName, password=password)
         job_id = await jobManager.create_job()
         
-        workerMetadataProvider: MetadataProvider = FileMetadataProvider()
-        worker_context : WorkerContext = workerMetadataProvider.get_context(job_id=job_id)
-        worker = ActiveWorkerStore.create_worker(job_id=job_id, worker_context=worker_context)
-
-        ## Attach event listners
-        persistenceListner = PersistenceListener()
-        cleanupListner = CleanupListner()
-        # For testing Purpose
-        printListner = PrintListner()
-
-        worker.events.subscribe(listner=cleanupListner)
-        worker.events.subscribe(listner=persistenceListner)
-        worker.events.subscribe(listner=printListner)
+        workerFactory = WorkerFactory()
+        worker = workerFactory.create(job_id=job_id)
 
         worker.start()
         worker.send(Message(job_id=job_id, command=Commands.CREATE_JOB, payload={}))
+        return {
+            "job_id": job_id,
+            "data" : [InstitutionData(institution_plan_id=161390,institution_name="SOORJATOLA",planned_date="2026-06-18T00:00:00.000Z",institution_type=InstitutionType.AWC)] ## Only for now It will be received to the user through websocket
+
+        }
     except Exception as e:
-        logging.exception(f"Error occured as {e}")
+        logging.exception("routes.py: Error creating worker")
+        raise HTTPException(status_code=500,detail="Internal error occured.")
 
-    return {
-        "job_id": job_id,
-        "data" : [InstitutionData(institution_plan_id=152514,institution_name="TEKADI NAHARTOLA 4",planned_date="2026-06-05T00:00:00.000Z",institution_type=InstitutionType.AWC)] ## Only for now It will be received to the user through websocket
-
-    }
 
 @router.get("/jobs/{job_id}/get-status")
 def get_status(job_id: str):

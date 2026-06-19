@@ -63,39 +63,28 @@ class Worker:
         
         payload = message.payload
         
-        
-        try:
-            runtimeManger = RunTimeManager(job_id=self.job_id, logger=self.log)
+        runtimeManger = RunTimeManager(job_id=self.job_id, logger=self.log)
 
-            print(f"Job is created for id: {self.job_id}")
-            runtime_job = runtimeManger.launch_browser_instance()
-            self.job_state = JobStatus.STARTING
-            self.page = runtime_job.page
-            self.browser = runtime_job.browser
-            self.context = runtime_job.context
-            self.playwright = runtime_job.playwright
-            self._emit_event(Events.WORKER_STARTED)
+        print(f"Job is created for id: {self.job_id}")
+        runtime_job = runtimeManger.launch_browser_instance()
+        self.job_state = JobStatus.STARTING
+        self.page = runtime_job.page
+        self.browser = runtime_job.browser
+        self.context = runtime_job.context
+        self.playwright = runtime_job.playwright
+        self._emit_event(Events.WORKER_STARTED)
 
         
-            self.job_state = JobStatus.LOGGING_IN
-            userName = self.worker_context.userName
-            password = self.worker_context.password
-            runtimeManger.login_user(self.page, userName=userName, password=password)
-            self._emit_event(Events.LOGIN_COMPLETED)
+        self.job_state = JobStatus.LOGGING_IN
+        userName = self.worker_context.userName
+        password = self.worker_context.password
+        runtimeManger.login_user(self.page, userName=userName, password=password)
+        self._emit_event(Events.LOGIN_COMPLETED)
 
 
-            self.job_state = JobStatus.WAITING_INSTITUTION
-            institution_data = runtimeManger.start_select_institution_stage(page=self.page, screening_date=self.worker_context.planned_date)
-            self._emit_event(Events.INSTITUTION_FETCHED, payload=institution_data)
-
-            # print(institution_data)
-        
-        except Exception as e:
-            self.job_state = JobStatus.FAILED
-            self._emit_event(Events.JOB_FAILED, payload={"error":str(e)})
-            
-            raise Exception(str(e))
-        
+        self.job_state = JobStatus.WAITING_INSTITUTION
+        institution_data = runtimeManger.start_select_institution_stage(page=self.page, screening_date=self.worker_context.planned_date)
+        self._emit_event(Events.INSTITUTION_FETCHED, payload=institution_data)
     
     def _handle_institution_selected(self, message: Message):
 
@@ -105,25 +94,19 @@ class Worker:
         if self.job_state != JobStatus.WAITING_INSTITUTION:
             raise Exception("Wrong command has thrown")
         
-        try:
-            payload = message.payload
-            institution_data = payload["institution_data"]
-            is_ANM_Present = payload.get("is_ANM_Present", False)
-            self._emit_event(event=Events.INSTITUTION_SELECTED, payload={"institution_data": institution_data})
-            runtimeManager = RunTimeManager(job_id=self.job_id, logger=self.log)
+        payload = message.payload
+        institution_data = payload["institution_data"]
+        is_ANM_Present = payload.get("is_ANM_Present", False)
+        self._emit_event(event=Events.INSTITUTION_SELECTED, payload={"institution_data": institution_data})
+        runtimeManager = RunTimeManager(job_id=self.job_id, logger=self.log)
 
-            self.job_state = JobStatus.RUNNING
-            uploaded_file_path = self.worker_context.uploaded_file_path
-            address = self.worker_context.address
-            mobile_number = self.worker_context.mobile_number
-            screening_date = self.worker_context.planned_date
-            runtimeManager.start_child_screening(page=self.page, institution_data=institution_data, is_ANM_Present=is_ANM_Present,screening_date=screening_date,uploaded_file_path=uploaded_file_path,address=address,mobile_number=mobile_number)
-            self._emit_event(Events.REPORT_CREATED)
-        except Exception as e:
-            self.job_state = JobStatus.FAILED
-            self._emit_event(Events.JOB_FAILED, payload={"error":str(e)})
-            raise Exception(str(e))
-
+        self.job_state = JobStatus.RUNNING
+        uploaded_file_path = self.worker_context.uploaded_file_path
+        address = self.worker_context.address
+        mobile_number = self.worker_context.mobile_number
+        screening_date = self.worker_context.planned_date
+        runtimeManager.start_child_screening(page=self.page, institution_data=institution_data, is_ANM_Present=is_ANM_Present,screening_date=screening_date,uploaded_file_path=uploaded_file_path,address=address,mobile_number=mobile_number)
+        self._emit_event(Events.REPORT_CREATED)
     
     def _process_command(self, message: Message):
         if message.command == Commands.CREATE_JOB:
@@ -150,10 +133,8 @@ class Worker:
                 self.process_next_message()
 
             except Exception as e:
-                logging.exception(e)
                 self.job_state = JobStatus.FAILED
                 self._emit_event(Events.JOB_FAILED, payload={"error":str(e)})
-                self.shutdown()
 
     def shutdown(self):
         self.running = False

@@ -1,6 +1,9 @@
+import logging
+
 from worker.Worker import Worker
 
 from all_models.WorkerContext import WorkerContext
+
 
 class ActiveWorkerStore:
     """
@@ -28,7 +31,8 @@ class ActiveWorkerStore:
             return worker_instance
 
         except Exception as e:
-            raise Exception(str(e)) 
+            logging.exception("ActiveWorkerStore: Error occured while creating worker")
+            raise
         
     @classmethod
     def get_worker(cls,job_id: str) -> Worker:
