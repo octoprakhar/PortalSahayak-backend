@@ -71,34 +71,51 @@ class InstitutionSelectionPage:
 
         return institutions
 
-    def _institution_attendance(self, institution_data: InstitutionData, is_ANM_present: bool = True):
+    def _institution_attendance(
+        self,
+        institution_data: InstitutionData,
+        is_ANM_present: bool = True
+    ):
         """
-        If attendance for that institution is not there then just do that thing. Ideally 
-        in each team there will be doctors and ANM, let's just say maybe if ANM is not there
-        So we don't need to click the radio button in front of ANM's name.
+        Mark attendance for all team members.
 
-        Parameters:
-        name: Str = Institutions Name
-        is_ANM_present: str = Whether or not ANM was there while screening this institution or not
-
-        Returns:
-        None
+        If ANM is not present, skip all ANM cards.
         """
-        cards = self.page.locator(
-            "div:has(span.font-medium):has(p.text-slate-500)"
+
+        print("Starting attendance work")
+
+        popup = self.page.get_by_role(
+            "heading",
+            name="Mark Attendance to Start Screening"
+        ).locator(
+            "xpath=ancestor::*[contains(@class,'fixed')]"
         )
 
-        for i in range(cards.count()):
+        cards = popup.locator(
+            "div.cursor-pointer:has(span.font-medium)"
+        )
+
+        count = cards.count()
+        print(f"Got count of cards as: {count}")
+
+        for i in range(count):
             card = cards.nth(i)
 
-            role = card.locator("p").inner_text().strip().upper()
+            role = card.locator("p.text-slate-500").inner_text().strip()
 
-            if not is_ANM_present and "ANM" in role:
+            if not is_ANM_present and "ANM" in role.upper():
                 continue
+
+            print("Clicking:", card.inner_text())
 
             card.click()
 
-        self.page.get_by_role("button", name="Submit & Start").click()
+        popup.get_by_role(
+            "button",
+            name="Submit & Start"
+        ).click()
+
+        print("Attendance submitted")
 
     def _get_institutions_by_date(self, all_institutions: list[InstitutionData]) -> list[InstitutionData]:
         """
@@ -227,16 +244,18 @@ class InstitutionSelectionPage:
             # Step 1: select institution by name
             self._select_institution_by_name_and_date(institute_name=institution_data.institution_name, visit_date=institution_data.planned_date)
 
-            # print("Now checking for the attendance block...")
+            print("Now checking for the attendance block...")
             ## step 2: Check whether attendance for institution is already done(it means it was already screening), or we need to do it
+            self.sychronizer.wait_loading(page=self.page)
             is_attendance_popup_shown = self.page.get_by_role("heading",name="Mark Attendance to Start Screening").is_visible()
-
+            print(f"Is attendance page visible: {is_attendance_popup_shown}")
             ## If attendance not done, do the attendance stuff
             if is_attendance_popup_shown:
-                # print("Trying to mark Attendance")
+                print("Trying to mark Attendance")
                 self._institution_attendance(institution_data=institution_data, is_ANM_present=is_ANM_present)
 
         except Exception as e:
             # print(str(e))
             logging.exception(f"Error occured while trying to select the given institution name: \n{e}")
+            print(e)
             raise Exception("Error occured while trying to open the institution")

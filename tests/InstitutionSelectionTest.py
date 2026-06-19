@@ -10,6 +10,8 @@ from workflow.InstitutionSelectionPage import InstitutionSelectionPage
 from all_models.InstitutionData import InstitutionData
 from constants.institution_type import InstitutionType
 
+from services.PageSynchronizer import PageSynchronizer
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s"
@@ -43,6 +45,8 @@ def random_past_date_current_month_iso() -> str:
     return random_date.isoformat()
 
 
+
+
 with sync_playwright() as p:
     browser = p.chromium.launch(channel="chrome", headless=False)
     page = browser.new_page()
@@ -51,12 +55,13 @@ with sync_playwright() as p:
     input("Login manually and press enter....")
     page.locator('[title="Screening"]').click()
     page.wait_for_timeout(5000)
-    institutionSelection = InstitutionSelectionPage(date=random_past_date_current_month_iso(),page=page)
+    synchronizer = PageSynchronizer()
+    institutionSelection = InstitutionSelectionPage(date=random_past_date_current_month_iso(),page=page, synchronizer=synchronizer)
     required_institutions = institutionSelection.get_month_data()
     print(required_institutions)
     page.wait_for_timeout(3000)
     
-    required_institution = InstitutionData(institution_plan_id=152514,institution_name="TEKADI NAHARTOLA 4",planned_date="2026-06-05T00:00:00.000Z",institution_type=InstitutionType.AWC)
+    required_institution = InstitutionData(institution_plan_id=162768,institution_name="KOPE-1",planned_date="2026-06-19T00:00:00.000Z",institution_type=InstitutionType.AWC)
     print("starting selecting the institution")
-    institutionSelection.select_institution(institution_data=required_institution, is_ANM_present=False)
+    institutionSelection.select_institution(institution_data=required_institution, is_ANM_present=True)
     page.wait_for_timeout(5000)
