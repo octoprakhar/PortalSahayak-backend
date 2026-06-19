@@ -1,6 +1,8 @@
 from playwright.sync_api import Page, Locator
 import logging
+from typing import Callable
 from all_models.FeedbackResult import FeedbackResult,FeedbackOutcome
+from services.PageSynchronizer import PageSynchronizer
 
 class LoginPage:
     """
@@ -8,9 +10,10 @@ class LoginPage:
     Assuming we are on that specific page only to start filling login form
 
     """
-    def __init__(self, page: Page, success_locator: Locator):
+    def __init__(self, page: Page, success_locator: Locator, synchronizer: PageSynchronizer):
         self.page = page
         self.success_locator = success_locator
+        self.synchronizer = synchronizer
 
 
     def _fill_captcha(self):
@@ -66,6 +69,10 @@ class LoginPage:
             )
         ## Check whether anything from next page is present or not
         try:
+            ## First check whether spinner is present or not
+            self.synchronizer.wait_loading(self.page)
+
+            ## Then when spinner is not present check for next page
             self.success_locator.wait_for(
                 state="visible",
                 timeout=5000

@@ -13,9 +13,10 @@ from constants.log_type import LogType
 from all_models.JobLogs import JobLog
 from utils.loaderUtils import get_age,get_corrected_values
 from services.SamManager import SamManager
+from services.PageSynchronizer import PageSynchronizer
 
 class ChildScreeningPage:
-    def __init__(self, page:Page, child:Child,sam_manager : SamManager, logger: Callable[[str,LogType],None] = None, job_id: str = None):
+    def __init__(self, page:Page, child:Child,sam_manager : SamManager, logger: Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None):
         self.page = page
         self.child = child
         self.job_id = job_id
@@ -23,6 +24,7 @@ class ChildScreeningPage:
         self.logger = logger
         self.age = get_age(self.child.dob)
         self.is_to_select_nrc = False
+        self.synchronizer = synchronizer
 
     def select_disease(self,disease_name):
 
@@ -308,10 +310,12 @@ class ChildScreeningPage:
         saveChildBtn.click()
 
         # Waiting and detecting if success and failure by UI
-        self.page.wait_for_timeout(1500)
-        portalFeedback = PortalFeedbackDetector(self.page,success_msg="Successfully inserted child detail")
+        self.synchronizer.wait_loading(page=self.page)
         current_page_locator = self.page.get_by_role("heading", name="👨‍👩‍👧‍👦 Personal & Family Details")
         next_page_locator = self.page.get_by_role("heading", name="Screening for Health Conditions")
+        next_page_locator.wait_for(state="visible",timeout=1500)
+        portalFeedback = PortalFeedbackDetector(self.page,success_msg="Successfully inserted child detail")
+        print(f"Is next page visible for new child entry as after loading: {next_page_locator.is_visible()}")
 
         feedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
         return feedbackResult
@@ -470,7 +474,8 @@ class ChildScreeningPage:
         finalSubmitBtn = self.page.get_by_role('button',name='Preview & Submit')
         # self.page.wait_for_timeout(5000)
         finalSubmitBtn.click()
-        self.page.wait_for_timeout(1000)
+        self.synchronizer.wait_loading(page=self.page)
+        
         portalFeedback = PortalFeedbackDetector(self.page, success_msg="Succesfully saved child health detail, moving to final submission.")
         current_page_locator = self.page.get_by_role("heading", name="Screening for Health Conditions")
         next_page_locator = self.page.get_by_role("heading", name="Screening Preview")
@@ -583,7 +588,7 @@ class ChildScreeningPage:
             self.page.get_by_role("button", name="Yes, proceed!").click()
             
 
-        self.page.wait_for_load_state("networkidle")
+        self.synchronizer.wait_loading(page=self.page)
 
         healthReportFeedbackResult = self.insertHealthReport()
         self._log_feedback(healthReportFeedbackResult)
@@ -612,10 +617,12 @@ class ChildScreeningPage:
 
         confirmClickBtn.click()
 
-        self.page.wait_for_timeout(2000)
+        self.synchronizer.wait_loading(page=self.page)
+        # self.page.wait_for_timeout(1500)
         portalFeedback = PortalFeedbackDetector(self.page, success_msg="Sucessfully saved existing child's detail")
         current_page_locator = self.page.get_by_role("heading", name="Screening Preview")
         next_page_locator = self.page.get_by_role("button", name="+ Add New Child")
+        next_page_locator.wait_for(state="visible",timeout=1500)
         finalFeedbackResult: FeedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
         self._log_feedback(finalFeedbackResult)
         if finalFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
@@ -657,11 +664,12 @@ class ChildScreeningPage:
             confirmClickBtn = self.page.get_by_role('button',name='Confirm & Submit')
 
             confirmClickBtn.click()
-            self.page.wait_for_load_state('networkidle')
-            self.page.wait_for_timeout(2000)
+            self.synchronizer.wait_loading(page=self.page)
+            # self.page.wait_for_timeout(1500)
             portalFeedback = PortalFeedbackDetector(self.page, success_msg="Child finally saved succesfully.")
             current_page_locator = self.page.get_by_role("heading", name="Screening Preview")
             next_page_locator = self.page.get_by_role("button", name="+ Add New Child")
+            next_page_locator.wait_for(state="visible",timeout=1500)
             finalFeedbackResult: FeedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
             self._log_feedback(finalFeedbackResult)
             if finalFeedbackResult.outcome == FeedbackOutcome.SUCCESS:

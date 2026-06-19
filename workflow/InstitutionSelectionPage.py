@@ -3,6 +3,7 @@ import logging
 
 from all_models.InstitutionData import InstitutionData
 from constants.institution_type import InstitutionType
+from services.PageSynchronizer import PageSynchronizer
 
 from utils.datetimeUtils import iso_to_ddmmyyyy,date_to_month_year
 
@@ -16,9 +17,10 @@ class InstitutionSelectionPage:
     date: str = This date will be ISO string, we will change it the way we want
     page: Page = playwright page instance, where we need to do the workflow
     """
-    def __init__(self,page: Page, date: str):
+    def __init__(self,page: Page, date: str, synchronizer: PageSynchronizer):
         self.page = page
         self.date = date
+        self.sychronizer = synchronizer
 
 
     def _get_all_institution_response(self) -> dict:
@@ -185,6 +187,10 @@ class InstitutionSelectionPage:
         list[InstitutionData]
         """
         try:
+            ## Wait for loading to complete
+            self.sychronizer.wait_loading(self.page)
+            mht_select = self.page.locator("select[name=mht]")
+            self.sychronizer.wait_for_institution_page_ready(mht_select=mht_select)
             ##Step 1: Select the month and then click select, 
             month = date_to_month_year(self.date)
             self.page.locator('[name="financialMonth"]').select_option(label=month)
@@ -212,8 +218,8 @@ class InstitutionSelectionPage:
             ## Return the List[InstitutionData] back
             return required_institution
         except Exception as e:
-            logging.exception(f"Error occured while trying to select the month in screening page: \n{e}")
-            raise Exception("Error occured while trying to open the monthly screening data")
+            logging.exception(f"InstitutionSelectionPage: Error occured while trying to select the month in screening page")
+            raise
         
     def select_institution(self,institution_data:InstitutionData, is_ANM_present: bool = True):
         try:

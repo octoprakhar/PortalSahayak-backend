@@ -9,6 +9,7 @@ from all_models.FeedbackResult import FeedbackResult, FeedbackOutcome
 from workflow.InstitutionSelectionPage import InstitutionSelectionPage
 from all_models.InstitutionData import InstitutionData
 from constants.log_type import LogType
+from services.PageSynchronizer import PageSynchronizer
 
 
 class RunTimeManager:
@@ -25,6 +26,7 @@ class RunTimeManager:
         """
         self.job_id = job_id
         self.logger = logger
+        self.synchronizer = PageSynchronizer()
 
 
     def launch_browser_instance(self) -> RuntimeJob:
@@ -48,6 +50,7 @@ class RunTimeManager:
         """
         This will automatically login user, get userName and password from from jobMetadata
         """
+        self.synchronizer.wait_loading(page=page)
         try:
             page.get_by_placeholder("Username").wait_for(
                 state="visible",
@@ -62,9 +65,9 @@ class RunTimeManager:
         self.logger("Starting to log in to the portal.", LogType.SUCCESS)
 
         screening = page.locator('[title="Screening"]')
-        loginPage = LoginPage(page=page,success_locator=screening)
+        loginPage = LoginPage(page=page,success_locator=screening, synchronizer=self.synchronizer)
 
-        loginResult: FeedbackResult = loginPage.login(userName=userName, password=password)
+        loginResult: FeedbackResult = loginPage.login(userName=userName, password=password )
 
         if loginResult.outcome == FeedbackOutcome.SUCCESS:
 
@@ -80,7 +83,7 @@ class RunTimeManager:
 
 
 
-    def start_select_institution_stage(self, page:Page, screening_date : str) -> list[InstitutionData]:
+    def start_select_institution_stage(self, page:Page, screening_date : str) -> list[InstitutionData] | None:
         """
         It will help the user to open the "Select Institution" screen using month which will be of type like this "May 2026".
         Update the job status to JobStataus.WAITING_INSTITUTION
@@ -90,20 +93,21 @@ class RunTimeManager:
         """
 
         try:
+            self.synchronizer.wait_loading(page=page)
+
             page.locator('[title="Screening"]').wait_for(
                 state="visible",
                 timeout=3000
             )
         except Exception as e:
             self.logger("User is not logged in. Please login and retry.",LogType.ERROR)
-            raise Exception(str(e))
+            return None
 
         ## Verify first that user has logged in or not, if not send user an error log of failing and ask for retry
 
         try:
             page.locator('[title="Screening"]').click()
-            page.wait_for_timeout(5000)
-            institutionSelection = InstitutionSelectionPage(page=page, date=screening_date)
+            institutionSelection = InstitutionSelectionPage(page=page, date=screening_date, synchronizer=self.synchronizer)
             resulted_institution = institutionSelection.get_month_data()
 
             self.logger("Waiting for user to select the intitution",LogType.INFO)
@@ -111,7 +115,7 @@ class RunTimeManager:
             return resulted_institution
 
         except Exception as e:
-            raise RuntimeError(str(e))
+            raise
         
 
     def start_child_screening(self, page: Page, uploaded_file_path: str, address: str, mobile_number: str, screening_date: str, institution_data: InstitutionData | None = None, is_ANM_Present: bool = True):
@@ -124,20 +128,22 @@ class RunTimeManager:
         try:
             ##TODO: Call Get institution first because we are now in institution page so yeah....
             if institution_data:
-                institutionPage = InstitutionSelectionPage(page=page, date=screening_date)
+                institutionPage = InstitutionSelectionPage(page=page, date=screening_date, synchronizer=self.synchronizer)
                 institutionPage.select_institution(institution_data=institution_data, is_ANM_present=is_ANM_Present)
+
+            self.synchronizer.wait_loading(page=page)
             page.get_by_role('button',name="Add New Child").wait_for(
                 state="visible",
                 timeout=3000
             )
         except Exception as e:
             self.logger("Institution is not selected please select the institution", LogType.ERROR)
-            raise Exception(str(e))
+            raise
         
 
         ## Start Screening Workflow with all the data
         try:
-            screeningWorkFLow: ScreeningWorkflow = ScreeningWorkflow(page=page,job_id=self.job_id)
+            screeningWorkFLow: ScreeningWorkflow = ScreeningWorkflow(page=page,job_id=self.job_id,synchronizer=self.synchronizer)
         
             failed_result = screeningWorkFLow.run(uploaded_file_path,mobile_number,address)
             ## TODO change it to csv and then send it to data
