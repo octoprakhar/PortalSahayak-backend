@@ -55,6 +55,12 @@ class DiseaseManager:
                     ## This disease is wrongly selected by the portal
                     print("This disease is wrongly selected by the portal so we are trying to remove it through checkbox.")
                     removal_strategy: DiseaseRemovalStrategy = CheckboxRemovalStrategy()
+
+                    ## First check whether any removal strategy is present because disease like (microcephely, or macrocephely) are not managed disease. But they have there own removal strategies
+                    if disease.definition.name in self.disease_removal_repo.get_all_disease_name_for_removal_strategy():
+                        removal_strategy: DiseaseRemovalStrategy = self.disease_removal_repo.get_strategy_by_disease_name(disease_name=disease.definition.name)
+
+
                     is_disease_removed = removal_strategy.remove(disease=disease,page=self.page,synchronizer=self.synchronizer)
                     if not is_disease_removed:
                         raise Exception("Cannot remove this disease, so leaving")

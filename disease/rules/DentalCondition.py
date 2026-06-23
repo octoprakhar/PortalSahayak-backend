@@ -10,4 +10,4 @@ class DentalConditionRule(DiseaseRule):
         if not age:
             return False
 
-        return current < max_count and age > 3
+        return current < max_count and age > 5

@@ -4,6 +4,10 @@ from disease.strategy.removal_strategies.checkbox_removal.CheckBoxRemovalStrateg
 from disease.strategy.removal_strategies.value_removal.SamValueRemovalStrategy import SamValueRemovalStrategy
 from disease.strategy.removal_strategies.DiseaseRemovalStrategy import DiseaseRemovalStrategy
 from disease.strategy.removal_strategies.NoRemovalStrategy import NoRemovalStrategy
+from disease.strategy.removal_strategies.value_removal.SevereStuntingRemovalStrategy import SevereStuntingRemovalStrategy
+from disease.strategy.removal_strategies.value_removal.MicrocephelyRemovalStrategy import MicrocephelyRemovalStrategy
+from disease.strategy.removal_strategies.value_removal.MacrocephelyRemovalStrategy import MacrocephelyRemovalStrategy
+from disease.strategy.removal_strategies.value_removal.AnaemiaRemovalStrategy import AnaemiaRemovalStrategy
 
 from services.PageSynchronizer import PageSynchronizer
 
@@ -18,6 +22,20 @@ class DiseaseRemovalStrategyRepository:
         self.disease_removal_strategies = {
             "SAM/Severe Thinness/SUW":
                 lambda: SamValueRemovalStrategy(),
+            "Skin Conditions":
+                lambda: CheckboxRemovalStrategy(),
+            "Dental Conditions":
+                lambda: CheckboxRemovalStrategy(),
+            "Severe Stunting":
+                lambda: SevereStuntingRemovalStrategy(),
+            "Microcephaly":
+                lambda: MicrocephelyRemovalStrategy(),
+            "Macrocephaly":
+                lambda: MacrocephelyRemovalStrategy(),
+            "Moderate Anaemia":
+                lambda: AnaemiaRemovalStrategy(),
+            "Mild Anaemia":
+                lambda: AnaemiaRemovalStrategy(),
 
             "DEFAULT":
                 lambda: NoRemovalStrategy()
@@ -30,3 +48,6 @@ class DiseaseRemovalStrategyRepository:
         )
 
         return strategy_factory()
+    
+    def get_all_disease_name_for_removal_strategy(self)->list[str]:
+        return list(self.disease_removal_strategies.keys() - {"DEFAULT"})

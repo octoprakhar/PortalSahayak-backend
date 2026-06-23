@@ -1,0 +1,21 @@
+from disease.strategy.removal_strategies.value_removal.ValueRemovalStrategy import ValueRemovalStrategy
+from disease.manipulator.DiseaseManipulator import DiseaseManipulator
+
+class MacrocephelyRemovalStrategy(ValueRemovalStrategy):
+
+    def __init__(self):
+        super().__init__()
+        self.MIN_HEAD_CIRCUMFERENCE = 30
+    def reach_limit(self, manipulator:DiseaseManipulator):
+        current_head_circumference = manipulator.get_head_circumference()
+        if not current_head_circumference:
+            raise ValueError("Invalid value of head circumference")
+        return current_head_circumference <= self.MIN_HEAD_CIRCUMFERENCE
+        
+    
+    def adjust_value(self, manipulator:DiseaseManipulator):
+        current_head_circumference = manipulator.get_head_circumference()
+        if not current_head_circumference:
+            raise ValueError("Invalid value of head circumference")
+        
+        manipulator.set_head_circumference(str(current_head_circumference-1))

@@ -19,7 +19,7 @@ class DiseaseCountManager:
             "Moderate Anaemia": 0,
             "Severe Stunting": 0,
             "Skin Conditions": 0,
-            "Dental Conditions": 0
+            "Dental Conditions": 1
         }
 
     def get_current_counts(self):
