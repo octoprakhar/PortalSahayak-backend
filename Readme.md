@@ -261,3 +261,122 @@ Playwright runtime objects (Browser, Context, Page) are allocated to, mutated by
 - Removed direct runtime-persistence coupling
 - Established producer-consumer architecture between API and workers
 - Verified success and failure flows through event-driven listeners
+
+# Disease Subdomain
+
+## Why this exists
+
+The government portal automatically assigns diseases based on entered values.
+Some diseases are incorrect and must be removed.
+Some diseases are managed with quotas and validation rules.
+The system must also support adding diseases later.
+
+Because disease behavior is complex, a dedicated disease subdomain was introduced.
+
+---
+
+## Current architecture
+
+DiseaseDefinition
+DiseaseDetector
+DiseaseManipulator
+DiseaseRule
+DiseaseRuleRepository
+DiseaseContext
+DiseaseCountManager
+DiseaseRemovalStrategy
+CheckboxRemovalStrategy
+ValueRemovalStrategy
+DiseaseRemovalStrategyRepository
+DiseaseManager
+
+---
+
+## Responsibilities
+
+### DiseaseDetector
+
+Reads diseases currently present on the portal.
+
+### DiseaseManipulator
+
+Performs UI actions:
+- check disease
+- uncheck disease
+- set height
+- set weight
+- set head circumference
+- set Hb
+
+### DiseaseRule
+
+Determines whether a managed disease is allowed.
+
+Examples:
+
+- SAM
+- Severe Stunting
+- Mild Anaemia
+- Moderate Anaemia
+- Skin Conditions
+- Dental Conditions
+
+### DiseaseContext
+
+Provides rules with:
+
+- child data
+- current counts
+- max counts
+
+### DiseaseCountManager
+
+Tracks current and maximum counts of managed diseases.
+
+### Removal Strategies
+
+#### Checkbox removal
+
+Used when diseases can be removed directly.
+
+#### Value removal
+
+Used when disease disappears only after changing measurements.
+
+Current implementation:
+
+- SAM removal
+
+---
+
+## DiseaseManager
+
+Main orchestrator.
+
+Flow:
+
+1. Detect diseases.
+2. Ignore user-selected diseases.
+3. Remove incorrect portal-selected diseases.
+4. Validate managed diseases through rules.
+5. Remove invalid managed diseases.
+6. Update managed disease counts.
+
+---
+
+## Tested scenarios
+
+- Healthy child.
+- Wrong checkbox diseases.
+- SAM removal.
+- Managed disease validation.
+
+---
+
+## Design goals
+
+- Separation of concerns.
+- Open for new diseases.
+- Open for new strategies.
+- Support future disease addition.
+- Avoid giant if-else blocks.

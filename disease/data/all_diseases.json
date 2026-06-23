@@ -1,0 +1,477 @@
+[
+    {
+        "name": "Neural Tube Defect",
+        "code": "1",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": [
+            {
+                "code": "A9",
+                "text": "Spine: Neural tube defect"
+            }
+        ]
+    },
+    {
+        "name": "Downs Syndrome",
+        "code": "2",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": [
+            {
+                "code": "A10",
+                "text": "Features Suggestive of Down’s Syndrome (Refer Pictorial)(Refer if more than one sign is present)"
+            }
+        ]
+    },
+    {
+        "name": "Cleft Lip and Palate",
+        "code": "3",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": [
+            {
+                "code": "A4",
+                "text": "Lips and Palate: Cleft (One side or both sides)"
+            }
+        ]
+    },
+    {
+        "name": "Talipes (club foot)",
+        "code": "4",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": [
+            {
+                "code": "A8",
+                "text": "Limbs: Any deformity/club foot"
+            }
+        ]
+    },
+    {
+        "name": "Developmental Dysplasia of Hip",
+        "code": "5",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": [
+            {
+                "code": "A7",
+                "text": "HIP: DDH: In case of a female child born through a breech delivery or child walking with a limp or asymmetrical thigh and gluteal skin folds"
+            }
+        ]
+    },
+    {
+        "name": "Congenital Cataract",
+        "code": "6",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": [
+            {
+                "code": "A2",
+                "text": "Eyes: Any visible abnormality i.e.white pupil, Squint (important esp,after 3 months), frequent jerky movements,tilting the head when focusing(important esp. after 6 months)"
+            }
+        ]
+    },
+    {
+        "name": "Congenital Deafness",
+        "code": "7",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": []
+    },
+    {
+        "name": "Congenital Heart Disease",
+        "code": "8",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": [
+            {
+                "code": "A 11",
+                "text": "Congenital Heart Disease: Any loud murmur on the chest or cyanosis on lips or bluish spells or features of congestive cardiac failure (Sweating during feeding, recurrent breathing difficulties, poor weight gain, Exercise intolerance, easy fatigability, bilateral pitting edema)"
+            }
+        ]
+    },
+    {
+        "name": "Retinopathy of Prematurity (only at DH)",
+        "code": "9",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": []
+    },
+    {
+        "name": "Microcephaly",
+        "code": "42",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": [
+            {
+                "code": "A1",
+                "text": "Head: Abnormally large or small in size/shape deformity. Size Check > 2SD < 2 D and mark"
+            }
+        ]
+    },
+    {
+        "name": "Macrocephaly",
+        "code": "43",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": [
+            {
+                "code": "A1",
+                "text": "Head: Abnormally large or small in size/shape deformity. Size Check > 2SD < 2 D and mark"
+            }
+        ]
+    },
+    {
+        "name": "Congenital Ear Problems",
+        "code": "47",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": [
+            {
+                "code": "A3",
+                "text": "Ear: Any abnormality of shape(do not refer if isolated finding)"
+            }
+        ]
+    },
+    {
+        "name": "Neck and Face Defects",
+        "code": "48",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": [
+            {
+                "code": "A6",
+                "text": "Neck: Exceptionally short * do not refer if isolated finding"
+            }
+        ]
+    },
+    {
+        "name": "Congenital Eye Problems",
+        "code": "50",
+        "category": "DEFECTS_AT_BIRTH",
+        "questions": [
+            {
+                "code": "A2",
+                "text": "Eyes: Any visible abnormality i.e.white pupil, Squint (important esp,after 3 months), frequent jerky movements,tilting the head when focusing(important esp. after 6 months)"
+            }
+        ]
+    },
+    {
+        "name": "Severe Anemia",
+        "code": "10",
+        "category": "DEFICIENCIES",
+        "questions": [
+            {
+                "code": "B3",
+                "text": "Severe anemia – Look for severe palmar pallor"
+            }
+        ]
+    },
+    {
+        "name": "Vitamin A Deficiency",
+        "code": "11",
+        "category": "DEFICIENCIES",
+        "questions": [
+            {
+                "code": "B4",
+                "text": "Vitamin A Deficiency: Ask for night blindness/look for Bitot’s spot."
+            }
+        ]
+    },
+    {
+        "name": "SAM/Severe Thinness/SUW",
+        "code": "13",
+        "category": "DEFICIENCIES",
+        "questions": [
+            {
+                "code": "B1",
+                "text": "SAM: Weight for Height/length: refer if the child is less than- 3 SD as per WHO chart, counsel if <-2 SD.lf age< 6 months use Wt/for age and >60 months use BMl"
+            },
+            {
+                "code": "B2",
+                "text": "SAM- Oedema: Bilateral pitting oedema . Child may have skin lesions or thinning hair."
+            }
+        ]
+    },
+    {
+        "name": "Severe Stunting",
+        "code": "41",
+        "category": "DEFICIENCIES",
+        "questions": [
+            {
+                "code": "B9",
+                "text": "Severe Stunting : Height for age below minus 3SD (severe stunting) from the median of the WHO groth chart: Refer and if below minus 2SD (moderate stunting): "
+            }
+        ]
+    },
+    {
+        "name": "Vitamin B Complex Deficiency",
+        "code": "44",
+        "category": "DEFICIENCIES",
+        "questions": [
+            {
+                "code": "B8",
+                "text": "Vitamin B complex Def. : angular stomatitis, cheilosis,magenta/ fissured/ Raw tongue ; cornean vascularization, malar & supra orbital pigmentation."
+            }
+        ]
+    },
+    {
+        "name": "Moderate Anaemia",
+        "code": "52",
+        "category": "DEFICIENCIES",
+        "questions": []
+    },
+    {
+        "name": "Mild Anaemia",
+        "code": "89",
+        "category": "DEFICIENCIES",
+        "questions": []
+    },
+    {
+        "name": "MAM",
+        "code": "90",
+        "category": "DEFICIENCIES",
+        "questions": []
+    },
+    {
+        "name": "Vitamin D Deficiency",
+        "code": "120",
+        "category": "DEFICIENCIES",
+        "questions": []
+    },
+    {
+        "name": "Skin Conditions",
+        "code": "15",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": [
+            {
+                "code": "C4",
+                "text": "Skin Condition: Does the child have itching on skin (especially at night)/ Look for round or oval scaly patches/pustules in finger webs. Any other lesion on the skin."
+            }
+        ]
+    },
+    {
+        "name": "Otitis Media",
+        "code": "16",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": [
+            {
+                "code": "C2",
+                "text": "Otitis Media: Did child have more than 3 episode of ear discharge in last 1 year/Look for active discharge from ear"
+            }
+        ]
+    },
+    {
+        "name": "Rheumatic Heart Disease",
+        "code": "17",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": []
+    },
+    {
+        "name": "Dental Conditions",
+        "code": "19",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": [
+            {
+                "code": "C3",
+                "text": "Dental Condition: Look for white/brown areas, cavitations, swollen/bleeding/red gums"
+            }
+        ]
+    },
+    {
+        "name": "Convulsive Disorders",
+        "code": "20",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": [
+            {
+                "code": "C1",
+                "text": "Convulsive Disorder-Ask mother if child ever had spells of unconsciousness and fits include momentary blackouts or momentary loss of contact with real world with or without history of sudden falls or sudden jerky contractions."
+            }
+        ]
+    },
+    {
+        "name": "Childhood Leprosy Disease",
+        "code": "39",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": [
+            {
+                "code": "C7",
+                "text": "Childhood Leprosy or Hansen’s Disease??  (If Y, Refer)"
+            }
+        ]
+    },
+    {
+        "name": "Childhood Tuberculosis Pulmonary ",
+        "code": "40",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": [
+            {
+                "code": "C8",
+                "text": "Childhood Tubercular Diesease (If Y Refer)"
+            }
+        ]
+    },
+    {
+        "name": "Stage 2 Hypertension",
+        "code": "46",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": []
+    },
+    {
+        "name": "Referactive Problems",
+        "code": "49",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": []
+    },
+    {
+        "name": "Childhood Tuberculosis (Extra Pulmonary) ",
+        "code": "140",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": []
+    },
+    {
+        "name": "Bronchail Asthma(Reactive Aiirway Disease)",
+        "code": "180",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": []
+    },
+    {
+        "name": "Prehypertension",
+        "code": "460",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": []
+    },
+    {
+        "name": "Stage 1 Hypertension",
+        "code": "461",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": []
+    },
+    {
+        "name": "Vision Impairment",
+        "code": "21",
+        "category": "DEVELOPMENTAL_DELAY",
+        "questions": [
+            {
+                "code": "D11.1",
+                "text": "Does your child have difficulty in seeing either during day/night ? (without spectacles) (V)"
+            }
+        ]
+    },
+    {
+        "name": "Hearing Impairment",
+        "code": "22",
+        "category": "DEVELOPMENTAL_DELAY",
+        "questions": [
+            {
+                "code": "D11.9",
+                "text": "Does your child have difficulty in hearing? (without hearing aid?(H)"
+            }
+        ]
+    },
+    {
+        "name": "Neuro-Motor",
+        "code": "23",
+        "category": "DEVELOPMENTAL_DELAY",
+        "questions": [
+            {
+                "code": "D9.1",
+                "text": "Any Neuro-Motor abnormality (Correlate with pictures in Job Aids) Refer if YES"
+            }
+        ]
+    },
+    {
+        "name": "Motor Delay",
+        "code": "24",
+        "category": "DEVELOPMENTAL_DELAY",
+        "questions": [
+            {
+                "code": "D11.2",
+                "text": "Compared with other children of his/her age, did your child haveany delay in walking? (GM)"
+            }
+        ]
+    },
+    {
+        "name": "Cognitive Delay",
+        "code": "25",
+        "category": "DEVELOPMENTAL_DELAY",
+        "questions": [
+            {
+                "code": "D11.3",
+                "text": "Does your child have stiffness or floppiness and/or reduced strength in his/her arms or legs?(GM)"
+            },
+            {
+                "code": "D11.6",
+                "text": "Compared to children of his age, does your child find it difficult toread or write or do simple calculations? (C)"
+            },
+            {
+                "code": "D11.10",
+                "text": "Compared with other children of his/her age, does your child have difficulty in sustaining attention on activities at school, home or play?(C)"
+            },
+            {
+                "code": "D11.11",
+                "text": "As compared with other children of his/her age, does your child have difficulty in learining new things? (C)"
+            }
+        ]
+    },
+    {
+        "name": "Language Delay",
+        "code": "26",
+        "category": "DEVELOPMENTAL_DELAY",
+        "questions": [
+            {
+                "code": "D11.7",
+                "text": "Does the child have difficulty in speaking (as compared to other children of his/her age)? (Sp)"
+            },
+            {
+                "code": "D11.8",
+                "text": "Is your childs speech in any way different from other children of his/her age? (Sp)"
+            }
+        ]
+    },
+    {
+        "name": "Behaviour Disorder(Autism)",
+        "code": "27",
+        "category": "DEVELOPMENTAL_DELAY",
+        "questions": [
+            {
+                "code": "D10.1.1",
+                "text": "Does your child look in your eyes for more than a second or two (poor eye contact)?(If N Refer)"
+            },
+            {
+                "code": "D10.1.2",
+                "text": "Does your child ever use his/her index finger to point to ask for something? (If N Refer)"
+            },
+            {
+                "code": "D10.1.3",
+                "text": "Have you ever wondered that your child is deaf or is not responding to his/her name when you call (not communicating even through gestures)? (If Y Refer)"
+            },
+            {
+                "code": "D10.2.1",
+                "text": "Does your child take an interest in other children or play with other children?(If N refer)"
+            },
+            {
+                "code": "D10.2.2",
+                "text": "Does your child make unusual finger movements/ repetitive hand and body movements like finger Wriggling/ flapping/ spinning/jumping? (Repeated purposeless motor activity)(If Y refer)"
+            },
+            {
+                "code": "D10.2.3",
+                "text": "Does your child ever pretend play (talk on phone/take care of dolls)? (If N refer)"
+            }
+        ]
+    },
+    {
+        "name": "Learning Disorder",
+        "code": "28",
+        "category": "DEVELOPMENTAL_DELAY",
+        "questions": []
+    },
+    {
+        "name": "Attention Deficit Hyperactivity Disorder",
+        "code": "29",
+        "category": "DEVELOPMENTAL_DELAY",
+        "questions": []
+    },
+    {
+        "name": "Convulsive Disorders(Developmental delay)",
+        "code": "51",
+        "category": "DEVELOPMENTAL_DELAY",
+        "questions": [
+            {
+                "code": "D11.4",
+                "text": "From birth till date, has your child ever had fits, or became rigid, orhad sudden jerks or spasms of arms, legs or whole body?(Convulsive Disorder)"
+            },
+            {
+                "code": "D11.5",
+                "text": "From birth till date, has your child ever lost consciousness? (Convulsive Disorder)"
+            }
+        ]
+    }
+]

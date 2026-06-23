@@ -40,3 +40,32 @@ class PageSynchronizer:
             )
         except TimeoutError:
             raise Exception("Institution dropdown was not populated.")
+        
+    def wait_for_setting_height_or_weight(self,page:Page):
+        page.wait_for_function("""
+                        () => {
+                            const w = document.querySelector(
+                                'select[name="weightAgeClassification"]'
+                            )?.value;
+
+                            const l = document.querySelector(
+                                'select[name="lengthAgeClassification"]'
+                            )?.value;
+
+                            const wh = document.querySelector(
+                                'select[name="weightHeightClassification"]'
+                            )?.value;
+
+                            return w !== "0" &&
+                                l !== "0" &&
+                                wh !== "0";
+                        }
+                        """, timeout=15000)
+        
+    def wait_for_setting_head_circumference(self,page:Page):
+        page.wait_for_function("""
+            () => {
+                const el = document.querySelector('select[name="headCircumferenceClassification"]');
+                return el && el.value !== '0';
+            }
+            """)
