@@ -11,6 +11,11 @@ from disease.strategy.removal_strategies.DiseaseRemovalStrategy import DiseaseRe
 from disease.repository.DiseaseRemovalStrategyRepository import DiseaseRemovalStrategyRepository
 from disease.manager.DiseaseCountManager import DiseaseCountManager
 from disease.strategy.removal_strategies.checkbox_removal.CheckBoxRemovalStrategy import CheckboxRemovalStrategy
+from disease.repository.DiseaseAdditionStrategyRepository import DiseaseAdditionStrategyRepository
+from disease.repository.DiseaseRepository import DiseaseRepository
+from disease.models.DiseaseSource import DiseaseSource
+from disease.models.DiseaseDefinition import DiseaseDefinition
+from disease.strategy.adding_strategies.DiseaseAdditionStrategy import DiseaseAdditionStrategy
 
 from services.PageSynchronizer import PageSynchronizer
 
@@ -27,9 +32,11 @@ class DiseaseManager:
         self.detector = DiseaseDetector(page=self.page)
         self.count_manager = DiseaseCountManager()
         self.disease_removal_repo = DiseaseRemovalStrategyRepository()
+        self.disease_addition_repo = DiseaseAdditionStrategyRepository()
+        self.full_diseases_repo = DiseaseRepository()
         self.managed_disease_name = self.disease_rule_repo.get_managed_disease_names()
 
-    def manage(self, child:Child):
+    def manage(self, child:Child) -> list[DetectedDisease]:
         """
         It manages all the diseases regarding a specific child
         """
@@ -88,6 +95,55 @@ class DiseaseManager:
         
         ## TODO: Maybe we can assign a managed disease too here after deletion, if we can
         print("Checking whether should we add any disease or not.")
+        ## Let's check how many disease from addition repository satisfies rules for this child
+        candidate_diseases = self.disease_addition_repo.get_all_disease_name_for_adding_strategy()
+        print(f"Candidate diseases are : {candidate_diseases}")
+        for disease in candidate_diseases:
+            print("DiseaseManager:=====================================================\n")
+            print(f"Checking for candidate disease: {disease}")
+            current_diseases = self.detector.detect()
+            print(f"Current diseases are as follows :\n{current_diseases}")
+
+            if any(d.definition.name in candidate_diseases for d in current_diseases):
+                print(
+                    "A disease from candidate list is already present. "
+                    "Skipping disease addition."
+                )
+                break
+            
+            disease_rule = self.disease_rule_repo.get_rule(disease_name=disease)
+            if not disease_rule:
+                raise ValueError(f"Addition of disease : {disease} doesn't have rule")
+            disease_def = self.full_diseases_repo.get_by_name(disease)
+
+            print(f"Got full disease as : \n{disease_def}\nGot full rule as : \n{disease_rule}")
+            
+            if disease_rule.validate(disease=DetectedDisease(definition=disease_def,source=DiseaseSource.UNKNOWN),context=disease_context):
+                print(f"This disease: {disease} got validated. Adding only this one.")
+            #     ## Add the first disease that qualifies for simplicity
+            #     ## Get adding strategy
+                addition_strategy = self.disease_addition_repo.get_strategy_by_disease_name(disease_name=disease)
+                if not addition_strategy:
+                    print("Can't found adding strategy for this one")
+                    continue
+
+                print(f"Got addition strategy as : {addition_strategy}")
+                is_disease_added = addition_strategy.add(child=child,page=self.page,synchronizer=self.synchronizer,repository=self.full_diseases_repo)
+                if not is_disease_added:
+                    print(f"Cannot add this disease: {disease}. So trying next one.")
+                    continue
+                else:
+                    print(f"Added this disease succesfully: {disease}. Breaking out of the loop.")
+                    break    
+            else:
+                print(f"This disease {disease}.... failed validation rule test.")
+
+            
+
+            
+
+        
+
         ## Final output 
         final_diseases = self.detector.detect()
         print(f"Got final diseases as: {final_diseases}")
@@ -95,6 +151,8 @@ class DiseaseManager:
             if disease.definition.name in self.managed_disease_name:
                 ## Update the count
                 self.count_manager.increment(disease.definition.name)
-                
+
+        
+        return final_diseases
         
 
