@@ -4,6 +4,8 @@ from disease.manager.DiseaseManager import DiseaseManager
 from all_models.child_models import Child
 from services.PageSynchronizer import PageSynchronizer
 
+from disease.manager.DiseaseCountManager import DiseaseCountManager
+
 child = Child(
     name="A",
     dob="16-10-2023",
@@ -14,7 +16,7 @@ child = Child(
     address="xyz",
     height="70.5",
     weight="5.4",
-    diseaseName="",
+    diseaseName="PSD",
     hb="10",
     headCircumference="47",
     fatherName="None",
@@ -29,7 +31,7 @@ with sync_playwright() as p:
     page.goto("https://www.google.com")
     page.goto("https://rbsk.mohfw.gov.in/RBSK/login")
     input("Login manually and press enter....")
-    disease_manager = DiseaseManager(page=page,synchronizer=PageSynchronizer())
+    disease_manager = DiseaseManager(page=page,synchronizer=PageSynchronizer(),count_manager=DiseaseCountManager())
     page.wait_for_timeout(5000)
     disease_manager.manage(child=child)
     page.wait_for_timeout(5000)

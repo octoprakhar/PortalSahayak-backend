@@ -15,12 +15,18 @@ from utils.loaderUtils import get_age,get_corrected_values
 from services.SamManager import SamManager
 from services.PageSynchronizer import PageSynchronizer
 
+from disease.manager.DiseaseManager import DiseaseManager
+from disease.manager.DiseaseCountManager import DiseaseCountManager
+from disease.models.DiseaseDefinition import DiseaseDefinition
+from disease.models.DetectedDisease import DetectedDisease
+
 class ChildScreeningPage:
-    def __init__(self, page:Page, child:Child,sam_manager : SamManager, logger: Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None):
+    def __init__(self, page:Page, child:Child,sam_manager : SamManager, count_manager: DiseaseCountManager, logger: Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None):
         self.page = page
         self.child = child
         self.job_id = job_id
         self.sam_manager = sam_manager
+        self.count_manager = count_manager
         self.logger = logger
         self.age = get_age(self.child.dob)
         self.is_to_select_nrc = False
@@ -335,12 +341,6 @@ class ChildScreeningPage:
         weightField.fill(self.child.weight)
 
         hbField.fill(self.child.hb)
-
-        ## Check if child is SAM if yes, then check can we can't add it to SAM then just change it.
-        can_add_sam = self.sam_manager.can_accept_sam()
-
-        is_child_sam = False
-
         
 
         try:
@@ -367,64 +367,12 @@ class ChildScreeningPage:
             logging.error(f"Error occured while trying to get functions correct: {e}")
             return FeedbackResult(outcome=FeedbackOutcome.FAILURE, message=e.message)
         
-        ## Checking for referal checkbox first time after height and weight fill
-        referral_checkbox = self.page.locator('#referSameInstitute')
-        
-        
-        ## Sam checking only when referal checkbox is available
-        if referral_checkbox.is_visible():
-            referral_table = self.page.locator(
-                "table:has(th:text-is('Facility Type'))"
-            )
-
-
-            
-
-            # logging.info(f"Got logs for referal table as as: {referral_table.inner_text()}")
-            table_text = referral_table.inner_text()
-
-            is_child_sam = "SAM" in table_text
-
-
-            if is_child_sam and not can_add_sam:
-                logging.info(f"We cannot add this child : {self.child.name} in SAM, because limit exceeds.")
-                new_weight, new_height = get_corrected_values(self.age)
-                logging.info(f"Setting new weight and height of child as :{new_weight,new_height}")
-                heightField.fill(str(new_height))
-        
-                weightField.fill(str(new_weight))
-                try:
-                    self.page.wait_for_function("""
-                        () => {
-                            const w = document.querySelector(
-                                'select[name="weightAgeClassification"]'
-                            )?.value;
-
-                            const l = document.querySelector(
-                                'select[name="lengthAgeClassification"]'
-                            )?.value;
-
-                            const wh = document.querySelector(
-                                'select[name="weightHeightClassification"]'
-                            )?.value;
-
-                            return w !== "0" &&
-                                l !== "0" &&
-                                wh !== "0";
-                        }
-                        """, timeout=5000)
-                except Exception as e:
-                    logging.error(f"Error occured while trying to get functions correct: {e}")
-                    return FeedbackResult(outcome=FeedbackOutcome.FAILURE, message=e.message)
-
-            self.is_to_select_nrc = is_child_sam and can_add_sam
-            
 
         if round(self.age,2) <= 5:
             headCircumField = self.page.locator('[name="headCircumference"]')
             headCircumField.fill(self.child.headCircumference)
 
-        if round(self.age,1) >= 0.6 and round(self.age,2) <= 5:
+        if round(self.age,2) >= 0.6 and round(self.age,2) <= 5:
             muacFIeld = self.page.locator('[name="muac"]')
             muacFIeld.fill("13")
 
@@ -462,13 +410,22 @@ class ChildScreeningPage:
             logging.info(f"No disease for {self.child.name}, skipping selection")
         # self.select_disease(disease_name=disease_name)
         self.page.wait_for_timeout(1000)
+
+        ## Calling disease manager for final check
+        disease_manager = DiseaseManager(page=self.page, synchronizer=self.synchronizer, count_manager=self.count_manager)
+        final_detected_diseases = disease_manager.manage(child=self.child)
+
+        ## We just need to check whether SAM is present or not?
+        self.is_to_select_nrc = any(d.definition.name == "SAM/Severe Thinness/SUW" for d in final_detected_diseases)
+        logging.info(f"Final detected disease for the child : {self.child.name} is : \n{final_detected_diseases}\n\nIs child: {self.child.name} sam : {self.is_to_select_nrc}")
+
         
 
         ## Select facility only when visible, it could not be visible if child is healthy
         referral_checkbox = self.page.locator('#referSameInstitute')
 
         if referral_checkbox.is_visible():
-            logging.info(f"Calling Selecting facility for child: {self.child.name}, and to select nrc as : {self.is_to_select_nrc}, and is this child sam: {is_child_sam}")
+            # logging.info(f"Calling Selecting facility for child: {self.child.name}, and to select nrc as : {self.is_to_select_nrc}, and is this child sam: {is_child_sam}")
             self.select_facility(facility_type=self.child.facilityType,facility_name=self.child.facilityName,can_add_sam=self.is_to_select_nrc)
 
         finalSubmitBtn = self.page.get_by_role('button',name='Preview & Submit')
@@ -672,10 +629,10 @@ class ChildScreeningPage:
             next_page_locator.wait_for(state="visible",timeout=1500)
             finalFeedbackResult: FeedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
             self._log_feedback(finalFeedbackResult)
-            if finalFeedbackResult.outcome == FeedbackOutcome.SUCCESS:
-                if self.is_to_select_nrc:
-                    logging.info(f"Selecting NRC for this child {self.child.name}")
-                    self.sam_manager.register_sam()
+            # if finalFeedbackResult.outcome == FeedbackOutcome.SUCCESS:
+                # if self.is_to_select_nrc:
+                #     logging.info(f"Selecting NRC for this child {self.child.name}")
+                #     self.sam_manager.register_sam()
             if finalFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
                 logging.info(f"Error in finally saving this child.")
                 self._skip_child()

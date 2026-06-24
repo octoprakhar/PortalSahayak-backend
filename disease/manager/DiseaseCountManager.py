@@ -14,12 +14,12 @@ class DiseaseCountManager:
         }
 
         self.max_counts = {
-            "SAM/Severe Thinness/SUW": 0,
-            "Mild Anaemia": 1,
-            "Moderate Anaemia": 1,
-            "Severe Stunting": 1,
-            "Skin Conditions": 1,
-            "Dental Conditions": 1
+            "SAM/Severe Thinness/SUW": 1,
+            "Mild Anaemia": 4,
+            "Moderate Anaemia": 4,
+            "Severe Stunting": 5,
+            "Skin Conditions": 4,
+            "Dental Conditions": 3
         }
 
     def get_current_counts(self):

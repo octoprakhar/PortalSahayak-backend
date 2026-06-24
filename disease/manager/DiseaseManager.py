@@ -1,4 +1,5 @@
 from playwright.sync_api import Page
+import logging
 
 from all_models.child_models import Child
 
@@ -25,12 +26,12 @@ class DiseaseManager:
     It orchestrated everything regarding diseases. Adding, removing, or any other thing
     """
 
-    def __init__(self,page:Page, synchronizer: PageSynchronizer):
+    def __init__(self,page:Page, synchronizer: PageSynchronizer, count_manager: DiseaseCountManager):
         self.page = page
         self.synchronizer = synchronizer
         self.disease_rule_repo = DiseaseRuleRepository()
         self.detector = DiseaseDetector(page=self.page)
-        self.count_manager = DiseaseCountManager()
+        self.count_manager = count_manager
         self.disease_removal_repo = DiseaseRemovalStrategyRepository()
         self.disease_addition_repo = DiseaseAdditionStrategyRepository()
         self.full_diseases_repo = DiseaseRepository()
@@ -43,24 +44,25 @@ class DiseaseManager:
 
         ## Create all disease context
         disease_context = DiseaseContext(child=child,current_counts=self.count_manager.get_current_counts(),max_counts=self.count_manager.get_max_counts())
-        print(f"Made the context for the child as: \n{disease_context}")
-        print("\n")
+        # print(f"Made the context for the child as: \n{disease_context}")
+        # print("\n")
         ## 1. Detect all diseases
         
         detected_diseases : list[DetectedDisease] = self.detector.detect()
+        logging.info(f"Got detected diseases for child: {child.name} as:\n{detected_diseases}")
         if detected_diseases:
-            print(f"Initial detected diseases are: \n{detected_diseases}")
-            print("====================================")
-            print("\n")
+            # print(f"Initial detected diseases are: \n{detected_diseases}")
+            # print("====================================")
+            # print("\n")
             for disease in detected_diseases:
-                print(f"Now started for checking of disease : {disease.definition.name}")
-                if disease.definition.name in child.diseaseName:
-                    print("This disease is given by the user")
+                logging.info(f"Now started for checking of disease : {disease.definition.name}")
+                if disease.definition.name == child.diseaseName:
+                    logging.info("This disease is given by the user")
                     continue
 
                 if disease.definition.name != child.diseaseName and disease.definition.name not in self.managed_disease_name:
                     ## This disease is wrongly selected by the portal
-                    print("This disease is wrongly selected by the portal so we are trying to remove it through checkbox.")
+                    logging.info("This disease is wrongly selected by the portal so we are trying to remove it through checkbox.")
                     removal_strategy: DiseaseRemovalStrategy = CheckboxRemovalStrategy()
 
                     ## First check whether any removal strategy is present because disease like (microcephely, or macrocephely) are not managed disease. But they have there own removal strategies
@@ -72,40 +74,40 @@ class DiseaseManager:
                     if not is_disease_removed:
                         raise Exception("Cannot remove this disease, so leaving")
                 elif disease.definition.name in self.managed_disease_name:
-                    print("This is a managed disease. Now checking for validation")
+                    logging.info("This is a managed disease. Now checking for validation")
                     ## Check rules
                     disease_rule = self.disease_rule_repo.get_rule(disease_name=disease.definition.name)
-                    print(f"Got rule for this disease as {disease_rule}")
+                    # print(f"Got rule for this disease as {disease_rule}")
                     if not disease_rule:
                         raise Exception("Cannot find disease rule for a managed disease")
                 
                     if not disease_rule.validate(disease=disease, context=disease_context):
-                        print("This disease has not cleared validation test, so getting the removal strategy")
+                        logging.info("This disease has not cleared validation test, so getting the removal strategy")
                         removal_strategy: DiseaseRemovalStrategy = self.disease_removal_repo.get_strategy_by_disease_name(disease.definition.name)
-                        print(f"Got removal strategy as {removal_strategy}")
+                        # print(f"Got removal strategy as {removal_strategy}")
                         is_disease_removed = removal_strategy.remove(disease=disease,page=self.page,synchronizer=self.synchronizer)
                         if not is_disease_removed:
                             raise Exception("Cannot remove this disease, so leaving")
             
-                print("=========================================\n")
+                # print("=========================================\n")
         
         else:
-            print("Child is healthy")
+            logging.info("Child is healthy")
                     
         
         ## TODO: Maybe we can assign a managed disease too here after deletion, if we can
-        print("Checking whether should we add any disease or not.")
+        logging.info("Checking whether should we add any disease or not.")
         ## Let's check how many disease from addition repository satisfies rules for this child
         candidate_diseases = self.disease_addition_repo.get_all_disease_name_for_adding_strategy()
-        print(f"Candidate diseases are : {candidate_diseases}")
+        # print(f"Candidate diseases are : {candidate_diseases}")
         for disease in candidate_diseases:
-            print("DiseaseManager:=====================================================\n")
-            print(f"Checking for candidate disease: {disease}")
+            # print("DiseaseManager:=====================================================\n")
+            # print(f"Checking for candidate disease: {disease}")
             current_diseases = self.detector.detect()
-            print(f"Current diseases are as follows :\n{current_diseases}")
+            # print(f"Current diseases are as follows :\n{current_diseases}")
 
             if any(d.definition.name in candidate_diseases for d in current_diseases):
-                print(
+                logging.info(
                     "A disease from candidate list is already present. "
                     "Skipping disease addition."
                 )
@@ -116,27 +118,27 @@ class DiseaseManager:
                 raise ValueError(f"Addition of disease : {disease} doesn't have rule")
             disease_def = self.full_diseases_repo.get_by_name(disease)
 
-            print(f"Got full disease as : \n{disease_def}\nGot full rule as : \n{disease_rule}")
+            # print(f"Got full disease as : \n{disease_def}\nGot full rule as : \n{disease_rule}")
             
             if disease_rule.validate(disease=DetectedDisease(definition=disease_def,source=DiseaseSource.UNKNOWN),context=disease_context):
-                print(f"This disease: {disease} got validated. Adding only this one.")
+                logging.info(f"This disease: {disease} got validated. Adding only this one.")
             #     ## Add the first disease that qualifies for simplicity
             #     ## Get adding strategy
                 addition_strategy = self.disease_addition_repo.get_strategy_by_disease_name(disease_name=disease)
                 if not addition_strategy:
-                    print("Can't found adding strategy for this one")
+                    logging.error("Can't found adding strategy for this one")
                     continue
 
-                print(f"Got addition strategy as : {addition_strategy}")
+                # print(f"Got addition strategy as : {addition_strategy}")
                 is_disease_added = addition_strategy.add(child=child,page=self.page,synchronizer=self.synchronizer,repository=self.full_diseases_repo)
                 if not is_disease_added:
-                    print(f"Cannot add this disease: {disease}. So trying next one.")
+                    logging.error(f"Cannot add this disease: {disease}. So trying next one.")
                     continue
                 else:
-                    print(f"Added this disease succesfully: {disease}. Breaking out of the loop.")
+                    logging.info(f"Added this disease succesfully: {disease}. Breaking out of the loop.")
                     break    
             else:
-                print(f"This disease {disease}.... failed validation rule test.")
+                logging.info(f"This disease {disease}.... failed validation rule test.")
 
             
 

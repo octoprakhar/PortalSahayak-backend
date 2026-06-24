@@ -11,16 +11,18 @@ from services.CreateChild import ChildFactory
 from services.SamManager import SamManager
 from utils.loaderUtils import get_age
 from services.PageSynchronizer import PageSynchronizer
+from disease.manager.DiseaseCountManager import DiseaseCountManager
 
 
 class ExistingChildrenWithoutData:
-    def __init__(self, mobileNumber:str, page:Page,address:str,sam_manager: SamManager, job_id: str = None, synchronizer : PageSynchronizer = None):
+    def __init__(self, mobileNumber:str, page:Page,address:str,sam_manager: SamManager, count_manager: DiseaseCountManager, job_id: str = None, synchronizer : PageSynchronizer = None):
         self.mobileNumber = mobileNumber
         self.page = page
         self.address = address
         self.sam_manager = sam_manager
         self.job_id = job_id
         self.synchronizer = synchronizer
+        self.count_manager = count_manager
 
     def _getNumberOfPages(self) -> int | None:
         page_info = self.page.locator(
@@ -187,7 +189,8 @@ class ExistingChildrenWithoutData:
                         child=created_child,
                         sam_manager=self.sam_manager,
                         job_id=self.job_id,
-                        synchronizer=self.synchronizer
+                        synchronizer=self.synchronizer,
+                        count_manager=self.count_manager
                         
                     )
 

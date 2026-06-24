@@ -112,6 +112,8 @@ class ChildLoader:
         # Fill missing values and enforce data types
         if "diseaseName" in cleaned_df.columns:
             cleaned_df["diseaseName"] = cleaned_df["diseaseName"].astype(str)
+            ## Fill "", when disease is null
+            cleaned_df["diseaseName"] = cleaned_df["diseaseName"].fillna("")
         
         cleaned_df['mobileNumber'] = cleaned_df["mobileNumber"].fillna(defaultContactNum).astype(str) 
         cleaned_df['visionLeft'] = cleaned_df["visionLeft"].fillna("6/6").astype(str)
@@ -140,15 +142,16 @@ class ChildLoader:
         logging.info("DOB got transformed.")
 
         ## 3. Filling randomly 15% of students with NaN diseaseName either skin or dental with 3:1 ratio
-        trans_df = fill_disease_from_nan(trans_df)
-        logging.info("Random diseases got set")
+        ## NOTE: Removing random disease selection from pre-processing
+        # trans_df = fill_disease_from_nan(trans_df)
+        # logging.info("Random diseases got set")
 
         ## Mapping faculty name with DEIC, NRC, CHC(default)
         trans_df = standardize_facility(trans_df)
         logging.info("Facilities got mapped wrt facility Name")
-        logging.info(
-    f"💣💣 Got number of SAM students as {trans_df[trans_df['facilityType']=='NRC'].shape[0]}"
-)
+#         logging.info(
+#     f"💣💣 Got number of SAM students as {trans_df[trans_df['facilityType']=='NRC'].shape[0]}"
+# )
 
         return trans_df
     

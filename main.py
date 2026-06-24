@@ -19,3 +19,5 @@ app.add_middleware(
 )
 
 app.include_router(router)
+
+# To get all the logs with running "uvicorn main:app --reload > my_server_logs.txt 2>&1"

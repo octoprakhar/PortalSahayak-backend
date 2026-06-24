@@ -1,5 +1,6 @@
 from playwright.sync_api import Page, Locator
 import re
+import logging
 
 from disease.models.DiseaseDefinition import DiseaseDefinition
 from disease.models.DiseaseCategory import DiseaseCategory
@@ -157,7 +158,7 @@ class DiseaseManipulator:
         target_table = self._select_disease_name_table()
         if not target_table:
             raise Exception("Can't get the target disease table")
-        print(target_table.inner_text())
+        # print(target_table.inner_text())
 
         ## Select the disease
         self._select_disease_name(table=target_table, name=disease.name)
@@ -176,35 +177,35 @@ class DiseaseManipulator:
         target_table = self._select_question_name_table()
 
         if not target_table:
-            print("No target table for question found")
+            # print("No target table for question found")
             return
         
-        print("Got target table value as \n\n")
+        # print("Got target table value as \n\n")
         print(target_table.inner_text())
 
         questions = disease.questions
-        print("======================")
-        print(f"Now let's search for these questions: \n{questions}")
+        # print("======================")
+        # print(f"Now let's search for these questions: \n{questions}")
         if questions:
             for question in questions:
                 row = self._get_question_table_row(table=target_table,name=question.text)
                 if not row:
-                    print("No row found")
+                    # print("No row found")
                     return
-                print(f"\n")
-                print(f"Got row for question as : \n{row.inner_text()}")
+                # print(f"\n")
+                # print(f"Got row for question as : \n{row.inner_text()}")
                 is_checkbox_checked = self._is_question_checked(row=row)
-                print(f"Is checkbox for this question checked: {is_checkbox_checked}")
+                # print(f"Is checkbox for this question checked: {is_checkbox_checked}")
                 if is_checkbox_checked:
                     self._select_question_name(table=target_table, name=question.text)
 
         
-        print("\nall questions get unclicked")
+        # print("\nall questions get unclicked")
         
 
         # ## Start unclicking the disease
         disease_target_table = self._select_disease_name_table()
-        print(f"\nGot disease table as: \n{disease_target_table.inner_text()}")
+        # print(f"\nGot disease table as: \n{disease_target_table.inner_text()}")
 
         
         self._select_disease_name(table=disease_target_table, name=disease.name)
@@ -246,10 +247,16 @@ class DiseaseManipulator:
             return None
     
     def get_head_circumference(self)->int | None:
+        
+        self.synchronizer.wait_for_setting_head_circumference(page=self.page)
+
         head_circumference = self.page.locator('input[name="headCircumference"]').input_value()
         try:
-            return int(head_circumference)
-        except:
+            return int(float(head_circumference))
+        except Exception as e:
+            logging.error(
+                f"Head circumference conversion failed: {e}"
+            )
             return None
         
     def get_hb(self)->float | None:

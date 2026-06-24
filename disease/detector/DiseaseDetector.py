@@ -4,6 +4,7 @@ from disease.models.DetectedDisease import DetectedDisease
 from disease.repository.DiseaseRepository import DiseaseRepository
 from disease.models.DiseaseDefinition import DiseaseDefinition
 from disease.models.DiseaseSource import DiseaseSource
+from disease.models.DiseaseCategory import DiseaseCategory
 
 class DiseaseDetector:
     """
@@ -80,12 +81,13 @@ class DiseaseDetector:
         if not required_table or required_table is None:
             # print("No table found")
             return []
-        # print(required_table.inner_text())
+        # print(f"Got table for diseases as this \n{required_table.inner_text()}")
         
         ## If we found that row, then next work is simple, getting the disease name
         health_condition_names = self._get_health_condition_name(table=required_table)
+        # print(f"Got health condition names as : {health_condition_names}")
 
-        print("========================")
+        # print("========================")
         if not health_condition_names:
             # print("We got the table, but can't get the health condition name")
             return []
@@ -97,6 +99,8 @@ class DiseaseDetector:
         for condition in health_condition_names:
             full_condition_data = self.diseaseRepository.get_by_name(condition)
             if not full_condition_data:
+                ## It means this disease is in others, and it could be selected by the user, so we need to make disease definition for it.
+                all_diseases.append(DiseaseDefinition(name=condition, code=None, category= DiseaseCategory.OTHERS, questions=[]))
                 continue
             all_diseases.append(full_condition_data)
 
