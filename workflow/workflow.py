@@ -41,6 +41,8 @@ class ScreeningWorkflow:
 
                 searchStudent = SearchStudent(page=self.page, child=child)
                 existingStudent: SearchResult | None = searchStudent.search()
+
+                logging.info(f"For child: {child.name}. Search result is {existingStudent}")
                 
                 if existingStudent.found == True and existingStudent.eligible == True:
                     logging.info(f"🤩🤩 Child with name {child.name} already exists.")
@@ -51,13 +53,19 @@ class ScreeningWorkflow:
                         self.report_creator.add_failure(existingStudentResult)
                     else:
                         self.report_creator.add_success(existingStudentResult)
-                else:
+                elif existingStudent.found == False:
                     logging.info(f"🎉🎉 Child with {child.name} saved.")
                     newStudentResult = screening.submit()
                     if newStudentResult.feedback.outcome is not FeedbackOutcome.SUCCESS:
                         self.report_creator.add_failure(newStudentResult)
                     else:
                         self.report_creator.add_success(newStudentResult)
+                else:
+                    ## We are making duplicate copy
+                    self.report_creator.add_failure(ChildRunResult(child=child,child_type=ChildType.EXISTING_CHILD,feedback=FeedbackResult(outcome=FeedbackOutcome.DUPLICATE,message="This child is already present")))
+                    logging.info(f"Child : {child.name} is already screened. So just moving forward")
+                    SearchStudent.clear_search_text(page=self.page)
+                    continue
 
                 
 
