@@ -16,6 +16,8 @@ from disease.repository.DiseaseAdditionStrategyRepository import DiseaseAddition
 from disease.repository.DiseaseRepository import DiseaseRepository
 from disease.models.DiseaseSource import DiseaseSource
 from disease.models.DiseaseDefinition import DiseaseDefinition
+from disease.models.DiseaseCategory import DiseaseCategory
+from disease.manipulator.DiseaseManipulator import DiseaseManipulator
 from disease.strategy.adding_strategies.DiseaseAdditionStrategy import DiseaseAdditionStrategy
 
 from services.PageSynchronizer import PageSynchronizer
@@ -37,17 +39,57 @@ class DiseaseManager:
         self.full_diseases_repo = DiseaseRepository()
         self.managed_disease_name = self.disease_rule_repo.get_managed_disease_names()
 
+    def _select_user_given_disease(self,disease_name: str)-> None:
+        """
+        Using manipulator it will try selecting user's disease
+        """
+
+        ## 1. Get full disease from disease_name
+        full_disease = self.full_diseases_repo.get_by_name(name=disease_name)
+        ## NOw let's make the manipulator and pass it the disease
+        manipulator = DiseaseManipulator(page=self.page,synchronizer=self.synchronizer)
+
+        if not full_disease:
+            ## It means disease is not default disease it is from others
+            ## So we need to make disease definition by ourselves
+            full_disease = DiseaseDefinition(name=disease_name,category=DiseaseCategory.OTHERS,code=None,questions=[])
+            # print(f"This is the other's category disease of the user. So we made the disease.")
+            # print(f"Got full disease as {full_disease}")
+            manipulator.select_others_disease(disease=full_disease)
+        else:
+            # print(f"Got full disease as {full_disease}")
+            manipulator.click_check_box(disease=full_disease)
+
+
+
     def manage(self, child:Child) -> list[DetectedDisease]:
         """
         It manages all the diseases regarding a specific child
         """
+
+        print("Disease Manager is called.")
 
         ## Create all disease context
         disease_context = DiseaseContext(child=child,current_counts=self.count_manager.get_current_counts(),max_counts=self.count_manager.get_max_counts())
         # print(f"Made the context for the child as: \n{disease_context}")
         # print("\n")
         ## 1. Detect all diseases
+        detected_diseases : list[DetectedDisease] = self.detector.detect()
+        is_user_disease_selected = any(d.definition.name == child.diseaseName for d in detected_diseases)
+
         
+        ## Start by first checking whether user disease is selected
+        ## Because till now only the diseases through value changing is only been selected.
+        # logging.info(f"Is User given disease, which is : {child.diseaseName}. Is it seleted? {is_user_disease_selected}")
+
+        if not is_user_disease_selected:
+            try:
+                self._select_user_given_disease(disease_name=child.diseaseName)
+            except:
+                logging.error('Error happened while selecting user disease')
+
+
+        ## After doing user's disease thing check again
         detected_diseases : list[DetectedDisease] = self.detector.detect()
         logging.info(f"Got detected diseases for child: {child.name} as:\n{detected_diseases}")
         if detected_diseases:
@@ -97,6 +139,21 @@ class DiseaseManager:
         
         ## TODO: Maybe we can assign a managed disease too here after deletion, if we can
         logging.info("Checking whether should we add any disease or not.")
+
+
+        if child.diseaseName:
+            logging.info(f"Child: {child.name} already has a disease given by the user as: {child.diseaseName}, so we are not adding any further diseases")
+            ## Final output 
+            final_diseases = self.detector.detect()
+            print(f"Got final diseases as: {final_diseases}")
+            for disease in final_diseases:
+                if disease.definition.name in self.managed_disease_name:
+                    ## Update the count
+                    self.count_manager.increment(disease.definition.name)
+
+        
+            return final_diseases
+
         ## Let's check how many disease from addition repository satisfies rules for this child
         candidate_diseases = self.disease_addition_repo.get_all_disease_name_for_adding_strategy()
         # print(f"Candidate diseases are : {candidate_diseases}")
@@ -148,7 +205,7 @@ class DiseaseManager:
 
         ## Final output 
         final_diseases = self.detector.detect()
-        print(f"Got final diseases as: {final_diseases}")
+        # print(f"Got final diseases as: {final_diseases}")
         for disease in final_diseases:
             if disease.definition.name in self.managed_disease_name:
                 ## Update the count

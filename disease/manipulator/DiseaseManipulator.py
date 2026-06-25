@@ -149,6 +149,22 @@ class DiseaseManipulator:
             if cell.inner_text().strip() == name:
                 return row
         return None
+    
+    def select_others_disease(self,disease:DiseaseDefinition):
+        """
+        THe diseases with others category are be found here.
+        """
+        other_div = self.page.locator('label:has-text("Other Health Condition")')
+        checkbox = other_div.locator('input[type="checkbox"]')
+        checkbox.check()
+
+        referHealthFacility = self.page.locator('input[name="otherHealthConditionOption"][value="2"]')
+        referHealthFacility.wait_for(state='visible',timeout=5000)
+        referHealthFacility.check()
+
+        otherDiseaseTextArea = self.page.locator('textarea[placeholder="Enter details (max 100 chars)"]')
+        otherDiseaseTextArea.wait_for(state='visible',timeout=5000)
+        otherDiseaseTextArea.fill(disease.name)
 
     def click_check_box(self,disease:DiseaseDefinition):
         ## Click the category button first

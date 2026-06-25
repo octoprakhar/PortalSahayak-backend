@@ -35,22 +35,6 @@ class ChildFactory:
         """
         return round(random.uniform(10, 14), 1) 
 
-    def _getDiseaseName(self) -> str | None:
-        """
-        Randomly select an integer from 0 to 10, if range is 
-        * 0 to 5, return 'None'
-        * 6 to 7, return "Dental Conditions"
-        * 8 to 10: return "Skin Conditions"
-        """
-        num = random.randint(0, 10)
-
-        if 0 <= num <= 5:
-            return None
-        elif 6 <= num <= 7:
-            return "Dental Conditions"
-        else:
-            return "Skin Conditions"
-
     def _getFacilityTypeAndName(self) -> tuple[str,str]:
         """
         This function gives the facility type and Facility Name, for Now it will just return 
@@ -78,7 +62,6 @@ class ChildFactory:
         hb = self._createHb()
         headCircumference = self._getHeadCircumference()
         facilityType,facilityName = self._getFacilityTypeAndName()
-        diseaseName = self._getDiseaseName()
         return Child(
             name=self.existingChild.name,
             dob=self.existingChild.dob,
@@ -89,7 +72,7 @@ class ChildFactory:
             address=self.address,
             height=str(height),
             weight=str(weight),
-            diseaseName= diseaseName,
+            diseaseName= "",## Updated Now diseases will be assigned only by the diseaseManager for all the children
             hb=str(hb),
             headCircumference=str(headCircumference),
             facilityType=facilityType,

@@ -12,6 +12,6 @@ class ReportListner(EventListnerAbstract):
     def handle(self, event: WorkerEvent):
         if event.event == Events.REPORT_CREATED:
             ## Get success and failure report creator
-            logging.info(f"ReportListner: Got success path as : {event.payload.get("success_path")}")
-            logging.info(f"ReportListner: Got failure path as : {event.payload.get("failure_path")}")
+            logging.info(f"ReportListner: Got success path as : {event.payload.get('success_path')}")
+            logging.info(f"ReportListner: Got failure path as : {event.payload.get('failure_path')}")
            

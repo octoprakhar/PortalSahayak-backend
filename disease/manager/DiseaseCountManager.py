@@ -17,7 +17,7 @@ class DiseaseCountManager:
             "SAM/Severe Thinness/SUW": 0,
             "Mild Anaemia": 0,
             "Moderate Anaemia": 0,
-            "Severe Stunting": 0,
+            "Severe Stunting": 1,
             "Skin Conditions": 0,
             "Dental Conditions": 0
         }

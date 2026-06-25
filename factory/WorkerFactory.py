@@ -9,6 +9,7 @@ from worker.EventListnerAbstract import EventListnerAbstract
 from event_listners.PrintListner import PrintListner
 from event_listners.CleanupListner import CleanupListner
 from event_listners.PersistenceListener import PersistenceListener
+from event_listners.ReportListner import ReportListner
 
 from all_models.WorkerContext import WorkerContext
 
@@ -29,7 +30,7 @@ class WorkerFactory:
         return metadataProvider.get_context(job_id=job_id)
     
     def _get_default_listeners(self) -> list[EventListnerAbstract]:
-        return [ PrintListner(),PersistenceListener(), CleanupListner()]
+        return [ PrintListner(),PersistenceListener(), CleanupListner(), ReportListner()]
 
     def _add_listners(self, worker: Worker):
         listeners = self._get_default_listeners()

@@ -157,6 +157,16 @@ class ChildScreeningPage:
 
             option.click()
 
+    def _fill_if_visible(self,selector, value):
+        field = self.page.locator(selector)
+        if field.count() > 0 and field.is_visible():
+            field.fill(str(value))
+
+    def _select_if_visible(self,selector, value):
+        field = self.page.locator(selector)
+        if field.count() > 0 and field.is_visible():
+            field.select_option(label=str(value))
+
     def _skip_child(self):
         """
         For a reason if we don't have to enter this child just go to
@@ -382,47 +392,12 @@ class ChildScreeningPage:
             return FeedbackResult(outcome=FeedbackOutcome.FAILURE, message=e.message)
         
 
-        if round(self.age,2) <= 5:
-            headCircumField = self.page.locator('[name="headCircumference"]')
-            headCircumField.fill(self.child.headCircumference)
+        self._fill_if_visible('[name="headCircumference"]', self.child.headCircumference)
+        self._fill_if_visible('[name="muac"]', "13")
 
-        if round(self.age,2) >= 0.6 and round(self.age,2) <= 5:
-            muacFIeld = self.page.locator('[name="muac"]')
-            muacFIeld.fill("13")
+        self._select_if_visible('select[name="visionLeft"]', self.child.visionLeft)
+        self._select_if_visible('select[name="visionRight"]', self.child.visionRight)
 
-        if round(self.age,2) > 5:
-            # Fill vision Left
-            self.page.locator('select[name="visionLeft"]').select_option(
-                label=str(self.child.visionLeft)
-            )
-
-            # Fill vision Right
-            self.page.locator('select[name="visionRight"]').select_option(
-                label=str(self.child.visionRight)
-            )
-
-        ## Any disease selection
-        disease_name = self.child.diseaseName
-        if disease_name:
-            isDiseaseSelected:bool = self.select_disease(disease_name=disease_name)
-            if not isDiseaseSelected and disease_name != 'nan':
-                other_div = self.page.locator('label:has-text("Other Health Condition")')
-                checkbox = other_div.locator('input[type="checkbox"]')
-                checkbox.check()
-
-                referHealthFacility = self.page.locator('input[name="otherHealthConditionOption"][value="2"]')
-                referHealthFacility.wait_for(state='visible',timeout=5000)
-                referHealthFacility.check()
-
-                otherDiseaseTextArea = self.page.locator('textarea[placeholder="Enter details (max 100 chars)"]')
-                otherDiseaseTextArea.wait_for(state='visible',timeout=5000)
-                otherDiseaseTextArea.fill(disease_name)
-
-
-            
-        else:
-            logging.info(f"No disease for {self.child.name}, skipping selection")
-        # self.select_disease(disease_name=disease_name)
         self.page.wait_for_timeout(1000)
 
         ## Calling disease manager for final check
