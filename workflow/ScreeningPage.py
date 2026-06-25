@@ -9,11 +9,14 @@ from all_models.child_models import Child
 from services.PortalFeedbackDetector import PortalFeedbackDetector
 from services.SearchStudent import SearchStudent
 from all_models.FeedbackResult import FeedbackResult,FeedbackOutcome
+from all_models.ChildRunResult import ChildRunResult
+from constants.WorkflowStage import WorkflowStage
 from constants.log_type import LogType
+from constants.ChildType import ChildType
 from all_models.JobLogs import JobLog
 from utils.loaderUtils import get_age,get_corrected_values
-from services.SamManager import SamManager
 from services.PageSynchronizer import PageSynchronizer
+
 
 from disease.manager.DiseaseManager import DiseaseManager
 from disease.manager.DiseaseCountManager import DiseaseCountManager
@@ -21,11 +24,10 @@ from disease.models.DiseaseDefinition import DiseaseDefinition
 from disease.models.DetectedDisease import DetectedDisease
 
 class ChildScreeningPage:
-    def __init__(self, page:Page, child:Child,sam_manager : SamManager, count_manager: DiseaseCountManager, logger: Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None):
+    def __init__(self, page:Page, child:Child, count_manager: DiseaseCountManager, logger: Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None):
         self.page = page
         self.child = child
         self.job_id = job_id
-        self.sam_manager = sam_manager
         self.count_manager = count_manager
         self.logger = logger
         self.age = get_age(self.child.dob)
@@ -262,6 +264,19 @@ class ChildScreeningPage:
                 feedback.message
             )
 
+    def _fill_final_health_values(self, result: ChildRunResult):
+        height = self.page.locator('[name="height"]')
+        weight = self.page.locator('[name="weight"]')
+        hb = self.page.locator('[name="hb"]')
+        head_circum = self.page.locator('[name="headCircumference"]')
+
+        result.final_height = height.input_value() if height.count() > 0 else None
+        result.final_weight = weight.input_value() if weight.count() > 0 else None
+        result.final_hb = hb.input_value() if hb.count() > 0 else None
+        result.final_head_circumference = (
+            head_circum.input_value() if head_circum.count() > 0 else None
+        )
+
 
 
     def insertPersonalDetails(self) -> FeedbackResult:
@@ -325,10 +340,9 @@ class ChildScreeningPage:
 
         feedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
         return feedbackResult
-        # return FeedbackResult()
 
 
-    def insertHealthReport(self) -> FeedbackResult:
+    def insertHealthReport(self,result: ChildRunResult) -> FeedbackResult:
         heightField = self.page.locator('[name="height"]')
         weightField = self.page.locator('[name="weight"]')
         hbField = self.page.locator('[name="hb"]')
@@ -415,6 +429,10 @@ class ChildScreeningPage:
         disease_manager = DiseaseManager(page=self.page, synchronizer=self.synchronizer, count_manager=self.count_manager)
         final_detected_diseases = disease_manager.manage(child=self.child)
 
+        ## Fill latest values
+        self._fill_final_health_values(result=result)
+        result.final_diseases = [d.definition.name for d in final_detected_diseases]
+
         ## We just need to check whether SAM is present or not?
         self.is_to_select_nrc = any(d.definition.name == "SAM/Severe Thinness/SUW" for d in final_detected_diseases)
         logging.info(f"Final detected disease for the child : {self.child.name} is : \n{final_detected_diseases}\n\nIs child: {self.child.name} sam : {self.is_to_select_nrc}")
@@ -441,11 +459,14 @@ class ChildScreeningPage:
 
 
 
-    def saveExistingChild(self, existingChildLocator: Locator = None) -> FeedbackResult:
+    def saveExistingChild(self, existingChildLocator: Locator = None, existing_child_result : ChildRunResult = None) -> ChildRunResult:
         """
         Saves the existing child.
         If no locator is provided, locate the row using self.child details.
         """
+        child_result = ChildRunResult(child=self.child,child_type=ChildType.EXISTING_CHILD,stage=WorkflowStage.PERSONAL_DETAILS)
+
+
 
         if existingChildLocator is None:
 
@@ -547,12 +568,22 @@ class ChildScreeningPage:
 
         self.synchronizer.wait_loading(page=self.page)
 
-        healthReportFeedbackResult = self.insertHealthReport()
+        healthReportFeedbackResult = self.insertHealthReport(result=child_result if existing_child_result is None else existing_child_result)
         self._log_feedback(healthReportFeedbackResult)
         if healthReportFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
             self._skip_child()
-            return healthReportFeedbackResult
+            if existing_child_result is None:
+                child_result.feedback = healthReportFeedbackResult
+            else:
+                existing_child_result.feedback = healthReportFeedbackResult
+
+            return child_result if existing_child_result is None else existing_child_result
         # self.page.wait_for_timeout(1500)
+
+        if existing_child_result:
+            existing_child_result.stage = WorkflowStage.FINAL_SUBMIT
+        else:
+            child_result.stage = WorkflowStage.FINAL_SUBMIT
 
         mobileNumberField = self.page.locator(
         'input[placeholder="Enter Mobile"]'
@@ -584,7 +615,19 @@ class ChildScreeningPage:
         self._log_feedback(finalFeedbackResult)
         if finalFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
             self._skip_child()
-        return finalFeedbackResult
+            if existing_child_result is None:
+                child_result.feedback = finalFeedbackResult
+            else:
+                existing_child_result.feedback = finalFeedbackResult
+
+            return child_result if existing_child_result is None else existing_child_result
+        
+        if existing_child_result is None:
+            child_result.feedback = finalFeedbackResult
+        else:
+            existing_child_result.feedback = finalFeedbackResult
+
+        return child_result if existing_child_result is None else existing_child_result
 
 
         
@@ -592,12 +635,15 @@ class ChildScreeningPage:
 
     
 
-    def submit(self) -> FeedbackResult:
+    def submit(self) -> ChildRunResult:
 
         ## If child is above 6years and It is awc don't enter here
+        childRunResult = ChildRunResult(child=self.child,stage=WorkflowStage.PERSONAL_DETAILS,child_type=ChildType.NEW_CHILD)
         if self.age > 6:
             logging.info(f"📢📢 Got child of name: {self.child.name} has age greater than 6 and we are doing AWC so leaving.")
-            return FeedbackResult(outcome=FeedbackOutcome.INVALID_DATA, message=f"Got child of name: {self.child.name} has age greater than 6 and we are doing AWC so leaving.")
+            feedback = FeedbackResult(outcome=FeedbackOutcome.INVALID_DATA, message=f"Got child of name: {self.child.name} has age greater than 6 and we are doing AWC so leaving.")
+            childRunResult.feedback = feedback
+            return childRunResult
         ## Add child's personal detail and then add it's health report of each child, and then go
 
 
@@ -608,15 +654,19 @@ class ChildScreeningPage:
             self._log_feedback(registerFeedbackResult)
             if registerFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
                 self._skip_child()
-                return registerFeedbackResult
+                childRunResult.feedback = registerFeedbackResult
+                return childRunResult
             
             logging.info("🎁🎁🎁Started the process of health report saving of child detail.")
-
-            healthReportFeedbackResult = self.insertHealthReport()
+            childRunResult.stage = WorkflowStage.HEALTH_DETAILS
+            healthReportFeedbackResult = self.insertHealthReport(result=childRunResult)
             self._log_feedback(healthReportFeedbackResult)
             if healthReportFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
                 self._skip_child()
-                return healthReportFeedbackResult
+                childRunResult.feedback = healthReportFeedbackResult
+                return childRunResult
+            
+            childRunResult.stage = WorkflowStage.FINAL_SUBMIT
 
             confirmClickBtn = self.page.get_by_role('button',name='Confirm & Submit')
 
@@ -629,20 +679,19 @@ class ChildScreeningPage:
             next_page_locator.wait_for(state="visible",timeout=1500)
             finalFeedbackResult: FeedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
             self._log_feedback(finalFeedbackResult)
-            # if finalFeedbackResult.outcome == FeedbackOutcome.SUCCESS:
-                # if self.is_to_select_nrc:
-                #     logging.info(f"Selecting NRC for this child {self.child.name}")
-                #     self.sam_manager.register_sam()
             if finalFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
                 logging.info(f"Error in finally saving this child.")
                 self._skip_child()
-            return finalFeedbackResult
+                childRunResult.feedback = finalFeedbackResult
+            childRunResult.feedback = finalFeedbackResult
+            return childRunResult
 
         except Exception as e:
             logging.error(f"Can't save this child saving it to unsaved child with error message and moving to next: {e}")
             ## TODO save this non-saved child to our unsaved excel file
             self._skip_child()
-            return FeedbackResult(outcome=FeedbackOutcome.SYSTEM_ERROR, message="Internal Error happened. Moving to next child")
+            childRunResult.feedback = FeedbackResult(outcome=FeedbackOutcome.SYSTEM_ERROR, message="Internal Error happened. Moving to next child")
+            return childRunResult
 
 
     

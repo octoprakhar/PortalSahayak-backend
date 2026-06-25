@@ -8,7 +8,6 @@ logging.basicConfig(
 
 from all_models.child_models import Child
 from workflow.ExistingChildrenWithoutData import ExistingChildrenWithoutData
-from services.SamManager import SamManager
 
 child = Child(
     name="ansh",
@@ -38,6 +37,6 @@ with sync_playwright() as p:
     input("Select the institution you want to fill students and then click enter....")
     
 
-    existingChildren = ExistingChildrenWithoutData(mobileNumber="6265449307", address="GARAPURI", page=page, sam_manager=SamManager())
+    existingChildren = ExistingChildrenWithoutData(mobileNumber="6265449307", address="GARAPURI", page=page)
     existingChildren.addExistingChildren()
     page.wait_for_timeout(3000)

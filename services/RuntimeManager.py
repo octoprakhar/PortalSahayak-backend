@@ -10,6 +10,7 @@ from workflow.InstitutionSelectionPage import InstitutionSelectionPage
 from all_models.InstitutionData import InstitutionData
 from constants.log_type import LogType
 from services.PageSynchronizer import PageSynchronizer
+from services.ReportCreator import ReportCreator
 
 
 class RunTimeManager:
@@ -118,7 +119,7 @@ class RunTimeManager:
             raise
         
 
-    def start_child_screening(self, page: Page, uploaded_file_path: str, address: str, mobile_number: str, screening_date: str, institution_data: InstitutionData | None = None, is_ANM_Present: bool = True):
+    def start_child_screening(self, page: Page, uploaded_file_path: str, address: str, mobile_number: str, screening_date: str, report_creator: ReportCreator, institution_data: InstitutionData | None = None, is_ANM_Present: bool = True):
         """
         It will Trigger ChildScreening class to start screening, and change the job status to "RUNNING"
         
@@ -143,10 +144,9 @@ class RunTimeManager:
 
         ## Start Screening Workflow with all the data
         try:
-            screeningWorkFLow: ScreeningWorkflow = ScreeningWorkflow(page=page,job_id=self.job_id,synchronizer=self.synchronizer)
+            screeningWorkFLow: ScreeningWorkflow = ScreeningWorkflow(page=page,job_id=self.job_id,synchronizer=self.synchronizer,report_creator=report_creator)
         
-            failed_result = screeningWorkFLow.run(uploaded_file_path,mobile_number,address)
-            ## TODO change it to csv and then send it to data
+            screeningWorkFLow.run(uploaded_file_path,mobile_number,address)
             self.logger("Completed the JOB Succesfully 🎉🎉🎉🎉.",LogType.SUCCESS)
             
 

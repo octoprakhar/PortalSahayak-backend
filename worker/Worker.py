@@ -16,6 +16,7 @@ from all_models.RuntimeJob import RuntimeJob
 from all_models.InstitutionData import InstitutionData
 from worker.EventBus import EventBus
 from constants.log_type import LogType
+from services.ReportCreator import ReportCreator
 
 class Worker:
     """
@@ -31,6 +32,7 @@ class Worker:
         self.job_id = job_id
         self.worker_context:WorkerContext = worker_context
         self.mail_box = Mailbox()
+        self.report_creator = ReportCreator(job_id=job_id)
         self.events = EventBus()
         self.job_state = JobStatus.IDLE
         self.worker_state = WorkerState.CREATED
@@ -105,8 +107,9 @@ class Worker:
         address = self.worker_context.address
         mobile_number = self.worker_context.mobile_number
         screening_date = self.worker_context.planned_date
-        runtimeManager.start_child_screening(page=self.page, institution_data=institution_data, is_ANM_Present=is_ANM_Present,screening_date=screening_date,uploaded_file_path=uploaded_file_path,address=address,mobile_number=mobile_number)
-        self._emit_event(Events.REPORT_CREATED)
+        runtimeManager.start_child_screening(page=self.page, institution_data=institution_data, is_ANM_Present=is_ANM_Present,screening_date=screening_date,uploaded_file_path=uploaded_file_path,address=address,mobile_number=mobile_number,report_creator=self.report_creator)
+        success_path,failure_path = self.report_creator.flush()
+        self._emit_event(Events.REPORT_CREATED,payload={"success_path": success_path,"failure_path":failure_path})
     
     def _process_command(self, message: Message):
         if message.command == Commands.CREATE_JOB:

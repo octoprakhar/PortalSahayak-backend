@@ -3,3 +3,4 @@ __pycache__
 venv/
 jobs/
 .pytest_cache
+temp_files/

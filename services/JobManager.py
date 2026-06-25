@@ -7,11 +7,14 @@ import json
 from dataclasses import asdict
 import shutil
 from typing import Optional
+import csv
+from dataclasses import asdict
 
 from constants.job_status import JobStatus
 from constants.log_type import LogType
 from all_models.JobLogs import JobLog
 from all_models.JobMetadata import JobMetadata
+from all_models.ChildRunResult import ChildRunResult
 
 
 
@@ -290,6 +293,73 @@ class JobManager:
             raise RuntimeError(
                 f"Month field missing in metadata for job {job_id}"
             ) from e
+    
+    @staticmethod
+    def save_success_and_failure_files(job_id:str,success_rows: list[ChildRunResult], failure_rows : list[ChildRunResult])-> tuple[str,str]:
+        """
+        It will save persistantly success and failure data for that job in the database. and returns
+        success_path, failure_path.
+
+        For now save it in jobs/{job_id}/success.csv,and failure.csv
+        """
+
+        job_dir = Path("jobs") / job_id
+        job_dir.mkdir(parents=True, exist_ok=True)
+
+        success_file = job_dir / "success.csv"
+        failure_file = job_dir / "failure.csv"
+
+        def write_csv(file_path: Path, rows: list[ChildRunResult]) -> None:
+            if not rows:
+                # Create an empty file
+                file_path.touch(exist_ok=True)
+                return
+
+            row_dicts = [asdict(row) for row in rows]
+
+            with open(file_path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.DictWriter(
+                    f,
+                    fieldnames=row_dicts[0].keys()
+                )
+                writer.writeheader()
+                writer.writerows(row_dicts)
+
+        try:
+            write_csv(success_file, success_rows)
+            write_csv(failure_file, failure_rows)
+
+            JobManager.add_log(
+                job_id,
+                JobLog(
+                    timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),
+                    message=(
+                        f"Saved {len(success_rows)} successful rows and "
+                        f"{len(failure_rows)} failed rows."
+                    ),
+                    type=LogType.SUCCESS,
+                ),
+            )
+
+            return str(success_file), str(failure_file)
+
+        except Exception as e:
+            JobManager.add_log(
+                job_id,
+                JobLog(
+                    timeStamp=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),
+                    message=f"Failed to save result files: {str(e)}",
+                    type=LogType.ERROR,
+                ),
+            )
+            raise RuntimeError(
+                "Failed to save success and failure files"
+            ) from e
+
 
 
     @staticmethod

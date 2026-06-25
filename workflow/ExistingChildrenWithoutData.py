@@ -8,18 +8,18 @@ from all_models.child_models import Child
 from all_models.ExistingStudentModel import ExistingChildResult
 from workflow.ScreeningPage import ChildScreeningPage
 from services.CreateChild import ChildFactory
-from services.SamManager import SamManager
 from utils.loaderUtils import get_age
 from services.PageSynchronizer import PageSynchronizer
 from disease.manager.DiseaseCountManager import DiseaseCountManager
-
+from all_models.ChildRunResult import ChildRunResult
+from constants.WorkflowStage import WorkflowStage
+from constants.ChildType import ChildType
 
 class ExistingChildrenWithoutData:
-    def __init__(self, mobileNumber:str, page:Page,address:str,sam_manager: SamManager, count_manager: DiseaseCountManager, job_id: str = None, synchronizer : PageSynchronizer = None):
+    def __init__(self, mobileNumber:str, page:Page,address:str, count_manager: DiseaseCountManager, job_id: str = None, synchronizer : PageSynchronizer = None):
         self.mobileNumber = mobileNumber
         self.page = page
         self.address = address
-        self.sam_manager = sam_manager
         self.job_id = job_id
         self.synchronizer = synchronizer
         self.count_manager = count_manager
@@ -156,9 +156,10 @@ class ExistingChildrenWithoutData:
         return eligibleChildren
 
     
-    def addExistingChildren(self)->None:
+    def addExistingChildren(self)->list[ChildRunResult]:
 
         ## Step 0 : Get number of pages, in pagination, that times I need to loop and click 'next' button
+        all_child_results = []
         pages = self._getNumberOfPages()
         logging.info(f"Got number of pages as {pages}")
         nextBtn = self.page.locator("button",has_text="Next")
@@ -173,6 +174,7 @@ class ExistingChildrenWithoutData:
             eligible_children = self._eligibleChildren(all_children)
 
             for child in eligible_children:
+                
 
                 try:
 
@@ -183,19 +185,21 @@ class ExistingChildrenWithoutData:
                     )
 
                     created_child = childFactory.createChild()
+                    child_result = ChildRunResult(child=created_child,stage=WorkflowStage.PERSONAL_DETAILS, child_type=ChildType.EXISTING_CHILD_WITHOUT_DATA)
 
                     child_screening = ChildScreeningPage(
                         page=self.page,
                         child=created_child,
-                        sam_manager=self.sam_manager,
                         job_id=self.job_id,
                         synchronizer=self.synchronizer,
                         count_manager=self.count_manager
                         
                     )
-
+                    child_result.stage = WorkflowStage.HEALTH_DETAILS
                     # NO locator needed now
-                    child_screening.saveExistingChild()
+                    final_child_result = child_screening.saveExistingChild(existing_child_result=child_result)
+
+                    all_child_results.append(final_child_result)
 
                     logging.info(
                         f"Saved child {child.name}"
@@ -205,9 +209,12 @@ class ExistingChildrenWithoutData:
                     # website reset to page 1 after save
                     # so return back to current page
                     self._goToPage(curr_page)
+        
 
                 except Exception as e:
 
                     logging.exception(
                         f"Error saving child {child.name}: {e}"
                     )
+
+        return all_child_results
