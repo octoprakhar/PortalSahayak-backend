@@ -14,8 +14,9 @@ from constants.ChildType import ChildType
 from all_models.ChildRunResult import ChildRunResult
 
 from services.PageSynchronizer import PageSynchronizer
-from disease.manager.DiseaseCountManager import DiseaseCountManager
 from services.ReportCreator import ReportCreator
+from disease.factory.DiseaseCountFactory import DiseaseCountFactory
+from services.ExistingChildScanner import ExistingChildScanner
 
 
 class ScreeningWorkflow:
@@ -26,17 +27,21 @@ class ScreeningWorkflow:
         self.report_creator = report_creator
         self.logger = logger
         self.synchronizer = synchronizer
-        self.count_manager = DiseaseCountManager()
+
 
     def run(self, excel_path, defaultContactNum: str, address: str = ""):
         logging.info("Data Loading started")
         children = self.loader.loadData(excel_path,defaultContactNum,address)
 
+        new_child_disease_manager = DiseaseCountFactory().create(max_len=len(children))
+
+        logging.info(f"Got new disease manager max as : {new_child_disease_manager.get_max_counts()}")
+
 
         for child in children:
             try:
                 
-                screening = ChildScreeningPage(page = self.page, child=child,job_id= self.job_id,synchronizer=self.synchronizer, count_manager=self.count_manager)
+                screening = ChildScreeningPage(page = self.page, child=child,job_id= self.job_id,synchronizer=self.synchronizer, count_manager=new_child_disease_manager)
                 ## TODO check whether child is sam or not. Workflow will manage total sam count, internally classes will ask sam and set weight and height accordingly
 
                 searchStudent = SearchStudent(page=self.page, child=child)
@@ -88,8 +93,12 @@ class ScreeningWorkflow:
         
         ## Let's enter the existing child, that are not present in dataset given
         logging.info("📢📢📢📢📢📢📢📢📢📢 Starting with Existing children📢📢📢📢📢📢📢📢📢📢📢📢📢📢📢📢")
+        existing_children_without_data_numbers = ExistingChildScanner(page=self.page).get_total_existing_student()
+
+        existing_children_count_manager = DiseaseCountFactory().create(max_len=existing_children_without_data_numbers)
+        logging.info(f"Got existing disease manager max as : {existing_children_count_manager.get_max_counts()}")
         try:
-            existingChildrenWithoutData = ExistingChildrenWithoutData(mobileNumber=defaultContactNum, page=self.page, address=address, job_id=self.job_id,synchronizer=self.synchronizer, count_manager=self.count_manager)
+            existingChildrenWithoutData = ExistingChildrenWithoutData(mobileNumber=defaultContactNum, page=self.page, address=address, job_id=self.job_id,synchronizer=self.synchronizer, count_manager=existing_children_count_manager)
             non_data_existing_children_results = existingChildrenWithoutData.addExistingChildren()
             for child_result in non_data_existing_children_results:
                 if child_result.feedback.outcome is not FeedbackOutcome.SUCCESS:

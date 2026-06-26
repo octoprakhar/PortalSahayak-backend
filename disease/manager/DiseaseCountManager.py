@@ -3,23 +3,12 @@ class DiseaseCountManager:
     This class will handle each disease counts of managed diseases both max and current ones
     """
 
-    def __init__(self):
-        self.current_counts = {
-            "SAM/Severe Thinness/SUW": 0,
-            "Mild Anaemia": 0,
-            "Moderate Anaemia": 0,
-            "Severe Stunting": 0,
-            "Skin Conditions": 0,
-            "Dental Conditions": 0
-        }
+    def __init__(self, max_counts: dict[str,int]):
+        self.max_counts = max_counts
 
-        self.max_counts = {
-            "SAM/Severe Thinness/SUW": 0,
-            "Mild Anaemia": 0,
-            "Moderate Anaemia": 0,
-            "Severe Stunting": 1,
-            "Skin Conditions": 0,
-            "Dental Conditions": 0
+        self.current_counts = {
+            disease: 0
+            for disease in max_counts
         }
 
     def get_current_counts(self):

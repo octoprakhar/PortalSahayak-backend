@@ -67,7 +67,7 @@ class DiseaseManager:
         It manages all the diseases regarding a specific child
         """
 
-        print("Disease Manager is called.")
+        # print("Disease Manager is called.")
 
         ## Create all disease context
         disease_context = DiseaseContext(child=child,current_counts=self.count_manager.get_current_counts(),max_counts=self.count_manager.get_max_counts())
@@ -80,9 +80,9 @@ class DiseaseManager:
         
         ## Start by first checking whether user disease is selected
         ## Because till now only the diseases through value changing is only been selected.
-        # logging.info(f"Is User given disease, which is : {child.diseaseName}. Is it seleted? {is_user_disease_selected}")
+        logging.info(f"Is User given disease, which is : {child.diseaseName}. Is it seleted? {is_user_disease_selected}")
 
-        if not is_user_disease_selected:
+        if child.diseaseName.strip() and not is_user_disease_selected:
             try:
                 self._select_user_given_disease(disease_name=child.diseaseName)
             except:

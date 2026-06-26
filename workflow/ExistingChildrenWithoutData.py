@@ -154,6 +154,23 @@ class ExistingChildrenWithoutData:
 
         
         return eligibleChildren
+    
+    def getTotalEligibleChildren(self, is_AWC_Screening: bool = True)-> int:
+        total_children = 0
+
+        ## Step 1 go to the first page. It could be done by clicking on "Prev" button till it become disable to come to first page
+
+        ## Step 2, search for table whose table heads(not all headers but some) are "Name, Gender, Age, ScreeningActions"
+
+        ## If not present return 0
+
+        ## If present, get index column header for "Age", "ScreeningActions"
+        # Age will be like 4 years 5 months, if years value is greater than 6 and we are doing AWC screening(for now only AWC is there)
+        # Then age year greater than or equal to 6 is consider in-eligible, if age is less than 6 then it is eligible.
+
+        # Then after age check in ScreenAction, whether there is an element title="Start Screening" if it is present it is eligible.
+
+        ## When all the rows of this page table is over, just click on next button and then check again do this whole loop till it becomes disabled
 
     
     def addExistingChildren(self)->list[ChildRunResult]:
