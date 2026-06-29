@@ -10,9 +10,10 @@ from event_listners.PrintListner import PrintListner
 from event_listners.CleanupListner import CleanupListner
 from event_listners.PersistenceListener import PersistenceListener
 from event_listners.ReportListner import ReportListner
+from event_listners.WebsocketListner import WebsocketListner
 
 from all_models.WorkerContext import WorkerContext
-
+from all_models.ApplicationServices import ApplicationServices
 
 class WorkerFactory:
     """
@@ -21,6 +22,8 @@ class WorkerFactory:
     time of making a worker will be done here. So that we can just remove infrastructural 
     details in wherever we wanna use the worker.
     """
+    def __init__(self,application_services: ApplicationServices):
+        self.services = application_services
 
     def _get_context(self, job_id: str) -> WorkerContext:
         """
@@ -30,7 +33,7 @@ class WorkerFactory:
         return metadataProvider.get_context(job_id=job_id)
     
     def _get_default_listeners(self) -> list[EventListnerAbstract]:
-        return [ PrintListner(),PersistenceListener(), CleanupListner(), ReportListner()]
+        return [ PrintListner(event_bridge=self.services.event_bridge),PersistenceListener(event_bridge=self.services.event_bridge), CleanupListner(event_bridge=self.services.event_bridge), ReportListner(event_bridge=self.services.event_bridge), WebsocketListner(event_bridge=self.services.event_bridge,websocket_manager=self.services.websocket_manager)]
 
     def _add_listners(self, worker: Worker):
         listeners = self._get_default_listeners()

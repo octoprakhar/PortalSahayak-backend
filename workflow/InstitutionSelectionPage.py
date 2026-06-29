@@ -1,5 +1,6 @@
 from playwright.sync_api import Page
 import logging
+from datetime import datetime
 
 from all_models.InstitutionData import InstitutionData
 from constants.institution_type import InstitutionType
@@ -229,6 +230,12 @@ class InstitutionSelectionPage:
 
             ## Step 3: Get all the institution data for that date
             required_institution = self._get_institutions_by_date(all_institutions=institution_data)
+
+            for institution in required_institution:
+                institution.planned_date = (
+                    datetime.strptime(institution.planned_date, "%d-%m-%Y")
+                    .strftime("%Y-%m-%dT00:00:00.000Z")
+                )
 
             ## If no institution is there for that date, then simply throw error as  "No institution found for that date"
 

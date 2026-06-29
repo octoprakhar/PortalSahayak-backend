@@ -20,7 +20,7 @@ class Events(Enum):
     """
     WORKER_STARTED = "worker_started"
     LOGIN_COMPLETED = "login_completed"
-    INSTITUTION_FETCHED = "intitution_fetched"
+    INSTITUTION_FETCHED = "institution_fetched"
     INSTITUTION_SELECTED = "institution_selected"
     JOB_FAILED = "job_failed"
     REPORT_CREATED= "report_created"

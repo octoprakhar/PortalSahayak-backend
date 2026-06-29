@@ -1,6 +1,7 @@
-from fastapi import APIRouter,BackgroundTasks, File, Form, UploadFile, HTTPException
+from fastapi import APIRouter,BackgroundTasks, File, Form, UploadFile, HTTPException, WebSocket,Request
 from typing import Optional
 import logging
+import asyncio
 
 from utils.routerUtils import append_log, launch_browser_job, open_institution_page,start_child_screening
 from services.JobManager import JobManager
@@ -13,10 +14,12 @@ from worker_repository.ActiveWorkerStore import ActiveWorkerStore
 from all_models.Message import Message
 from factory.WorkerFactory import WorkerFactory
 from constants.Commands import Commands
+from websocket.WebsocketManager import WebsocketManger
 
 
 
 router = APIRouter()
+ws_manager = WebsocketManger()
 
 
 @router.get("/health")
@@ -25,7 +28,7 @@ async def get_users():
 
 @router.post("/create-job")
 async def create_job(
-    background_tasks: BackgroundTasks,
+    request: Request,
     address: Optional[str] = Form(None),
     mobileNumber: Optional[str] = Form(None),
     date: Optional[str] = Form(None),
@@ -42,7 +45,7 @@ async def create_job(
     Response as :
     job_id : string | Null
     """
-    # Validate data
+
     if not address or not address.strip():
         raise HTTPException(
             status_code=400,
@@ -82,6 +85,8 @@ async def create_job(
     
 
     ## Launching worker
+
+    services = request.app.state.services
     
 
     try:
@@ -89,7 +94,7 @@ async def create_job(
         jobManager = JobManager(address=address,mobileNumber=mobileNumber,file=file,date=date, userName=userName, password=password)
         job_id = await jobManager.create_job()
         
-        workerFactory = WorkerFactory()
+        workerFactory = WorkerFactory(application_services=services)
         worker = workerFactory.create(job_id=job_id)
 
         worker.start()
@@ -104,6 +109,22 @@ async def create_job(
         raise HTTPException(status_code=500,detail="Internal error occured.")
 
 
+@router.websocket("/ws/{job_id}")
+async def websocket_endpoint(websocket: WebSocket, job_id: str):
+    """
+    This endpoint catches the React client when it sends a connection request
+    using a specific job_id.
+    """
+    # Hand off the live websocket and its related job_id to our manager
+    ws_manager = websocket.app.state.services.websocket_manager
+    await ws_manager.connect(websocket, job_id)
+
+    # await ws_manager.send(job_id=job_id,message="Hello starting with first message")
+
+    # await asyncio.sleep(3)
+
+    # await ws_manager.send(job_id=job_id,message="Hello starting with first message")
+
 @router.get("/jobs/{job_id}/get-status")
 def get_status(job_id: str):
     
@@ -112,6 +133,11 @@ def get_status(job_id: str):
         return {"status": jobStatus.value}
     except Exception as e:
         return {"status": JobStatus.FAILED.value, "error": str(e)}
+    
+@router.get("/test-send/{job_id}")
+async def send_job(job_id:str):
+    # await ws_manager.send(job_id=job_id, message=f"Hello starting with first message: {random.random()}")
+    return {"status":200}
     
 
 @router.get("/jobs/{job_id}/logs")
