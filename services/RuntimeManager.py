@@ -117,6 +117,26 @@ class RunTimeManager:
 
         except Exception as e:
             raise
+
+    def navigate_to_institution_page(self,page:Page,screening_date: str) -> None:
+        """
+        If we are in dashboard, it will open the specific month for screening
+        """
+        try:
+            self.synchronizer.wait_loading(page=page)
+
+            page.locator('[title="Screening"]').wait_for(
+                state="visible",
+                timeout=3000
+            )
+        except Exception as e:
+            self.logger("User is not logged in. Please login and retry.",LogType.ERROR)
+            return
+
+        ## Verify first that user has logged in or not, if not send user an error log of failing and ask for retry
+
+        page.locator('[title="Screening"]').click()
+        InstitutionSelectionPage.go_to_institution_month(page=page,synchronizer=self.synchronizer,date=screening_date)
         
 
     def start_child_screening(self, page: Page, uploaded_file_path: str, address: str, mobile_number: str, screening_date: str, report_creator: ReportCreator, institution_data: InstitutionData | None = None, is_ANM_Present: bool = True):

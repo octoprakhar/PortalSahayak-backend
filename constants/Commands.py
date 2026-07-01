@@ -8,5 +8,5 @@ class Commands(Enum):
     2. THen user selects one of the institution and send back, that same worker will start with screening and report generation
     NOTE: for version 1, these two will be the commands, no cancel and pause.
     """
-    CREATE_JOB = "create_job"
-    INSTITUTION_SELECTED = "institution_selected"
+    GET_INSTITUTION = "get_institution"
+    START_SCREENING = "start_screening"

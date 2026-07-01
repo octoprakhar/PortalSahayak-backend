@@ -1,4 +1,4 @@
-from worker.Worker import Worker
+from worker.ScreeningWorker import Worker
 from constants.Commands import Commands
 from all_models.Message import Message
 

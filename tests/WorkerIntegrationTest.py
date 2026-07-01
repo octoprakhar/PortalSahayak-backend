@@ -1,5 +1,5 @@
 from worker_repository.ActiveWorkerStore import ActiveWorkerStore
-from worker.Worker import Worker
+from worker.ScreeningWorker import Worker
 from all_models.Message import Message
 from constants.Commands import Commands
 

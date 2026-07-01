@@ -34,33 +34,6 @@ class ChildScreeningPage:
         self.is_to_select_nrc = False
         self.synchronizer = synchronizer
 
-    def select_disease(self,disease_name):
-
-        ## Disease name for a child (a nullable column) must be get from excel
-
-        logging.info(
-        f"🧐🧐🧐🧐🧐🧐 Selecting disease. Child={self.child.name}, disease={disease_name}"
-        )
-        tabs = [
-            "Defects at Birth",
-            "Deficiencies",
-            "Childhood Diseases",
-            "Development Delay"
-        ]
-
-        for tab in tabs:
-            self.page.get_by_role("button", name=tab).click()
-
-            self.page.wait_for_timeout(1000)
-
-            row = self.page.locator("tr").filter(has_text=disease_name)
-
-            if row.count() > 0:
-                row.locator('input[type="checkbox"]').click()
-
-                return True
-        
-        return False
     
     def select_facility(self, facility_type, facility_name, can_add_sam: bool):
 

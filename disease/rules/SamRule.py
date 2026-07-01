@@ -10,7 +10,10 @@ class SamRule(DiseaseRule):
 
         Otherwise False
         """
+        child_disease = context.child.diseaseName
         current_count = context.current_counts.get("SAM/Severe Thinness/SUW",0)
         max_count = context.max_counts.get("SAM/Severe Thinness/SUW",9999999)
 
-        return current_count < max_count
+        is_current_count_less = current_count < max_count
+
+        return not child_disease.strip() and is_current_count_less

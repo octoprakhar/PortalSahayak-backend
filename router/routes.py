@@ -1,9 +1,8 @@
 from fastapi import APIRouter,BackgroundTasks, File, Form, UploadFile, HTTPException, WebSocket,Request
 from typing import Optional
 import logging
-import asyncio
+from io import BytesIO
 
-from utils.routerUtils import append_log, launch_browser_job, open_institution_page,start_child_screening
 from services.JobManager import JobManager
 from constants.job_status import JobStatus
 import random
@@ -14,6 +13,7 @@ from worker_repository.ActiveWorkerStore import ActiveWorkerStore
 from all_models.Message import Message
 from factory.WorkerFactory import WorkerFactory
 from constants.Commands import Commands
+from constants.WorkerType import WorkerType
 from websocket.WebsocketManager import WebsocketManger
 
 
@@ -26,38 +26,13 @@ ws_manager = WebsocketManger()
 async def get_users():
     return {"status": "ok"}
 
-@router.post("/create-job")
-async def create_job(
+@router.post("/register-signin-user")
+async def register_job(
     request: Request,
-    address: Optional[str] = Form(None),
-    mobileNumber: Optional[str] = Form(None),
-    date: Optional[str] = Form(None),
     userName: Optional[str] = Form(None),
-    password: Optional[str] = Form(None),
-    file: UploadFile | None = File(None)
+    password: Optional[str] = Form(None)
 ):
-    """
-    Request as : 
-    address: string
-    mobileNumber: String
-    file: File
-
-    Response as :
-    job_id : string | Null
-    """
-
-    if not address or not address.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Address is required"
-        )
-
-    if not mobileNumber or not mobileNumber.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Mobile number is required"
-        )
-    
+    logging.info("Request came in register sign in user.")
     if not userName or not userName.strip():
         raise HTTPException(
             status_code=400,
@@ -70,44 +45,14 @@ async def create_job(
             detail="Password is required"
         )
     
-    if not date or not date.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Screening month is required"
-        )
-
-    if not file or not file.filename:
-        raise HTTPException(
-            status_code=400,
-            detail="File is required"
-        )
-
-    
-
-    ## Launching worker
-
-    services = request.app.state.services
-    
-
     try:
-        ## Create the job
-        jobManager = JobManager(address=address,mobileNumber=mobileNumber,file=file,date=date, userName=userName, password=password)
-        job_id = await jobManager.create_job()
-        
-        workerFactory = WorkerFactory(application_services=services)
-        worker = workerFactory.create(job_id=job_id)
-
-        worker.start()
-        worker.send(Message(job_id=job_id, command=Commands.CREATE_JOB, payload={}))
-        return {
-            "job_id": job_id,
-            "data" : [InstitutionData(institution_plan_id=167015,institution_name="MOHGOVN BORI-1",planned_date="2026-06-24T00:00:00.000Z",institution_type=InstitutionType.AWC)] ## Only for now It will be received to the user through websocket
-
-        }
+        jobManager = JobManager() ## For testing
+        job_id = jobManager.construct_job()
+        jobManager.store_user_data(job_id=job_id, username=userName,password=password)
+        return {"job_id": job_id}
     except Exception as e:
-        logging.exception("routes.py: Error creating worker")
+        logging.exception(str(e))
         raise HTTPException(status_code=500,detail="Internal error occured.")
-
 
 @router.websocket("/ws/{job_id}")
 async def websocket_endpoint(websocket: WebSocket, job_id: str):
@@ -118,69 +63,64 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
     # Hand off the live websocket and its related job_id to our manager
     ws_manager = websocket.app.state.services.websocket_manager
     await ws_manager.connect(websocket, job_id)
-
-    # await ws_manager.send(job_id=job_id,message="Hello starting with first message")
-
-    # await asyncio.sleep(3)
-
-    # await ws_manager.send(job_id=job_id,message="Hello starting with first message")
-
-@router.get("/jobs/{job_id}/get-status")
-def get_status(job_id: str):
-    
-    try:
-        jobStatus = JobManager.get_current_status(job_id)
-        return {"status": jobStatus.value}
-    except Exception as e:
-        return {"status": JobStatus.FAILED.value, "error": str(e)}
-    
-@router.get("/test-send/{job_id}")
-async def send_job(job_id:str):
-    # await ws_manager.send(job_id=job_id, message=f"Hello starting with first message: {random.random()}")
-    return {"status":200}
     
 
-@router.get("/jobs/{job_id}/logs")
-def get_logs(job_id: str, after: Optional[str] = None):
-    try:
-        logs = JobManager.get_logs(job_id, after)
-        return {"logs": logs}
-    except Exception as e:
-        return {"logs": [], "error": str(e)}
+@router.post("/post-job-metadata")
+async def post_job_metadata(
+    request: Request,
+    address: Optional[str] = Form(None),
+    mobileNumber: Optional[str] = Form(None),
+    date: Optional[str] = Form(None),
+    job_id: Optional[str] = Form(None)
+):
     
-@router.post("/institutions-list")
-def get_institutions_list(background_task: BackgroundTasks,job_id: Optional[str] = Form(None)):
     """
-    Request:
-    job_id: str
-
-    Response:
-    status: ok
-    error: Nullable str
+    Save job metadata in the file, and start with doing next thing. Create Metadata Worker, and get the institution list for that date.
+    And then start running 
     """
-    ## Validate data
+    logging.info("Request came in Post job metadata.")
+    services = request.app.state.services
+    if not address or not address.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Address is required"
+        )
+
+    if not mobileNumber or not mobileNumber.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Mobile number is required"
+        )
+    
+    if not date or not date.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Screening month is required"
+        )
+    
     if not job_id or not job_id.strip():
         raise HTTPException(
             status_code=400,
             detail="Job ID is required"
         )
-
+    
     try:
-        background_task.add_task(open_institution_page,job_id)
-        return {"status":"ok"}
+        jobManager = JobManager() ## For testing
+        jobManager.store_job_metadata(job_id=job_id, address=address,mobile_number=mobileNumber,screening_date=date)
+
+        ## Now create worker for institution work
+        workerFactory = WorkerFactory(application_services=services)
+        institution_worker = workerFactory.create(job_id=job_id, worker_type=WorkerType.INSTITUTION_DATA_WORKER)
+        institution_worker.send(message=Message(job_id=job_id,command=Commands.GET_INSTITUTION,payload={}))
+        return {"job_id": job_id}
     except Exception as e:
-        return {"error":e.message}
+        logging.exception(str(e))
+        raise HTTPException(status_code=500,detail="Internal error occured.")
 
-
-@router.post("/start-screening")
-def start_job_screeninhg(background_task: BackgroundTasks,job_id: Optional[str] = Form(None),institution_plan_id: Optional[str] = Form(None),institution_name: Optional[str] = Form(None),institution_type_val: Optional[str] = Form(None),planned_date: Optional[str] = Form(None),is_anm_present: bool = Form(False)):
+@router.post("/select-institution")
+def select_institution(job_id: Optional[str] = Form(None),institution_plan_id: Optional[str] = Form(None),institution_name: Optional[str] = Form(None),institution_type_val: Optional[str] = Form(None),planned_date: Optional[str] = Form(None),is_anm_present: bool = Form(False)):
     """
-    Request:
-    job_id: str
-
-    Response:
-    status: ok
-    error: Nullable str
+    Save these data in job metadata, for the job, and update the jobstatus
     """
     ## Validate data
     if not job_id or not job_id.strip():
@@ -213,12 +153,56 @@ def start_job_screeninhg(background_task: BackgroundTasks,job_id: Optional[str] 
             detail="Planned date is required"
         )
     
+    logging.info("Request came in Select institution.")
+    
     institution_data = InstitutionData(institution_plan_id=institution_plan_id, institution_name=institution_name, institution_type=InstitutionType(value=institution_type_val), planned_date=planned_date)
+
+    try:
+        jobManager = JobManager()
+        jobManager.upload_institution_data(job_id=job_id,institution_data=institution_data)
+        return {"job_id":job_id}
+    except Exception as e:
+        logging.exception(str(e))
+        raise HTTPException(status_code=500,detail="Internal error occured.")
+
+
+
+@router.post("/start-screening")
+def start_job_screeninhg(request:Request,job_id: Optional[str] = Form(None),uploaded_file: UploadFile = File(...)):
+    """
+    It will take all children data, and then run the Screening Worker.
+    Request:
+    job_id: str
+
+    Response:
+    status: ok
+    error: Nullable str
+    """
+
+    services = request.app.state.services
+
+    if not job_id or not job_id.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Job ID is required"
+        )
+    ## Let's assume file is present
+    ## No validation for now
+    
 
 
     try:
-        worker = ActiveWorkerStore.get_worker(job_id=job_id)
-        worker.send(Message(job_id=job_id, command=Commands.INSTITUTION_SELECTED, payload={"institution_data":institution_data}))
-        return {"status":"ok"}
+
+        logging.info("Request came in Upload children")
+        
+        ## Save the file in persistant place
+        jobManager = JobManager()
+        jobManager.upload_file(job_id=job_id,uploaded_file=uploaded_file)
+
+        ## Create screening worker and pass the command for start screening
+        workerFactory = WorkerFactory(application_services=services)
+        screening_worker = workerFactory.create(job_id=job_id, worker_type=WorkerType.SCREENING_WORKER)
+        screening_worker.send(message=Message(job_id=job_id,command=Commands.START_SCREENING, payload={}))
+        return {"status":"ok","job_id":job_id}
     except Exception as e:
         return {"error":str(e)}

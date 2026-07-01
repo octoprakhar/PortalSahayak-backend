@@ -1,6 +1,9 @@
 import logging
 
-from worker.Worker import Worker
+from worker.WorkerAbstract import WorkerAbstract
+from worker.ScreeningWorker import ScreeningWorker
+from worker.metadata_worker.InstitutionDataWorker import InstitutionDataWorker
+
 from worker.MetadataProvider import MetadataProvider
 from worker_metadata_providers.FileMetadataProvider import FileMetadataProvider
 from worker_repository.ActiveWorkerStore import ActiveWorkerStore
@@ -15,6 +18,8 @@ from event_listners.WebsocketListner import WebsocketListner
 from all_models.WorkerContext import WorkerContext
 from all_models.ApplicationServices import ApplicationServices
 
+from constants.WorkerType import WorkerType
+
 class WorkerFactory:
     """
     This class will help in creating the worker, attaching it's listners, 
@@ -24,6 +29,10 @@ class WorkerFactory:
     """
     def __init__(self,application_services: ApplicationServices):
         self.services = application_services
+        self.WORKER_MAP: dict[WorkerType, type[WorkerAbstract]] = {
+            WorkerType.INSTITUTION_DATA_WORKER: InstitutionDataWorker,
+            WorkerType.SCREENING_WORKER: ScreeningWorker,
+        }
 
     def _get_context(self, job_id: str) -> WorkerContext:
         """
@@ -35,27 +44,38 @@ class WorkerFactory:
     def _get_default_listeners(self) -> list[EventListnerAbstract]:
         return [ PrintListner(event_bridge=self.services.event_bridge),PersistenceListener(event_bridge=self.services.event_bridge), CleanupListner(event_bridge=self.services.event_bridge), ReportListner(event_bridge=self.services.event_bridge), WebsocketListner(event_bridge=self.services.event_bridge,websocket_manager=self.services.websocket_manager)]
 
-    def _add_listners(self, worker: Worker):
+    def _add_listners(self, worker: WorkerAbstract):
         listeners = self._get_default_listeners()
         for listener in listeners:
             worker.events.subscribe(listner=listener)
 
-    def create(self,job_id: str) -> Worker:
+    def create(self,job_id: str, worker_type: WorkerType) -> WorkerAbstract:
         """
         This method is responsible for creating the worker
         """
 
         try:
             ## Step 1 Get worker context/metadata
-            worker_cotext: WorkerContext = self._get_context(job_id=job_id)
+            worker_context = self._get_context(job_id)
 
-            ## Step 2: Create the worker
-            worker = ActiveWorkerStore.create_worker(job_id=job_id, worker_context=worker_cotext)
+            worker_cls = self.WORKER_MAP[worker_type]
 
-            ## Step 3: Add listeners to it 
-            self._add_listners(worker=worker)
+            worker = worker_cls(
+                job_id=job_id,
+                worker_context=worker_context,
+            )
+
+            self._add_listners(worker)
+            worker.start()
+
+            ActiveWorkerStore.register_worker(
+                job_id=job_id,
+                worker_type=worker_type,
+                worker=worker,
+            )
 
             return worker
+
         except Exception as e:
             logging.exception("WorkerFactory: Error occured while making the worker")
             raise

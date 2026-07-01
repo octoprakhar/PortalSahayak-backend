@@ -108,8 +108,11 @@ class DiseaseManager:
                     removal_strategy: DiseaseRemovalStrategy = CheckboxRemovalStrategy()
 
                     ## First check whether any removal strategy is present because disease like (microcephely, or macrocephely) are not managed disease. But they have there own removal strategies
+                    logging.info("Let's first try removing this disease by finding the removal strategy")
                     if disease.definition.name in self.disease_removal_repo.get_all_disease_name_for_removal_strategy():
+
                         removal_strategy: DiseaseRemovalStrategy = self.disease_removal_repo.get_strategy_by_disease_name(disease_name=disease.definition.name)
+                        logging.info(f"For disease {disease.definition.name} with removal strategy as {removal_strategy}")
 
 
                     is_disease_removed = removal_strategy.remove(disease=disease,page=self.page,synchronizer=self.synchronizer)

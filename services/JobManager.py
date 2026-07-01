@@ -1,5 +1,6 @@
 import uuid
 from pathlib import Path
+import shutil
 from datetime import datetime
 from fastapi import UploadFile
 from zoneinfo import ZoneInfo
@@ -9,12 +10,15 @@ import shutil
 from typing import Optional
 import csv
 from dataclasses import asdict
+from enum import Enum
 
 from constants.job_status import JobStatus
 from constants.log_type import LogType
 from all_models.JobLogs import JobLog
 from all_models.JobMetadata import JobMetadata
 from all_models.ChildRunResult import ChildRunResult
+from all_models.UserMetadata import UserMetadata
+from all_models.InstitutionData import InstitutionData
 
 
 
@@ -22,7 +26,7 @@ class JobManager:
     """
     This class helps with doing CRUD operations across a particular job. It only does persistant work
     """
-    def __init__(self, address: str, mobileNumber: str, file: UploadFile, date: str, userName: str, password: str):
+    def __init__(self):
         
         """
         It will initiate the JobManager class, with given address, mobileNumber, 
@@ -30,54 +34,102 @@ class JobManager:
         it later on to deal with persistant.
         """
 
-        self.address = address
-        self.mobileNumber = mobileNumber
-        self.date = date
-        self.file = file
-        self.userName = userName
-        self.password = password
+    @staticmethod
+    def json_serializer(obj):
+        if isinstance(obj, Enum):
+            return obj.value
+        raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
-    async def create_job(self) -> str:
+    def _load_job_metadata(self, job_id: str) -> JobMetadata:
+        path = f"jobs/{job_id}/job.json"
+
+        with open(path, "r") as f:
+            data = json.load(f)
+
+        return JobMetadata(**data)
+    
+    def _save_job_metadata(
+        self,
+        job_metadata: JobMetadata,
+    ):
+        path = f"jobs/{job_metadata.job_id}/job.json"
+
+        with open(path, "w") as f:
+            json.dump(asdict(job_metadata), f, indent=4, default=JobManager.json_serializer)
+
+    
+    def construct_job(self) -> str:
         """
-        Creating job means saving four different things about the data
-        1. Saving uploaded files
-        2. Maintaining each job's logs
-        3. Maintaining each jobs persistant data, like job_id, status, created_at, address, mobileNumber, uploaded file's data
-        
-        It only creates the job and set the status to JobStatus.IDLE, to run the job, means JobStatus.WAITING_LOGIN, and then create page 
-        and other things, this is not the class it only creates.
-
-        Returns:
-        job_id : str
+        It's sole purpose is to create a job_id, and then create a folder, inside jobs, with that id, and returns that id.
         """
-
-        # Let's start by creating the job id
         job_id = str(uuid.uuid4())
 
-        ## For now let's just make a folder with job_id inside 'jobs' folder and save data there. Afterwards we need to save somewhere else for persistence
+        ## Now make job_dir
         job_dir = Path("jobs") / job_id
         job_dir.mkdir(exist_ok=True, parents=True)
 
-        ## Now save the file in the folder
-        try:
-            uploaded_file_path = job_dir/ "uploaded.csv"
-            file_bytes = await self.file.read()
-            with open(uploaded_file_path, "wb") as f:
-                f.write(file_bytes)
-        except Exception as e:
-            raise RuntimeError("Can't create the file that is uploaded by the user") from e
-
-        ## Now making the file to store persistant data regarding job
-        job_metadata = JobMetadata(job_id=job_id, status=JobStatus.IDLE.value, created_at=datetime.utcnow().isoformat(), address=self.address, mobile_number=self.mobileNumber,date=self.date, userName=self.userName, password=self.password)
-        with open(job_dir / "job.json", "w", encoding="utf-8") as f:
-            json.dump(asdict(job_metadata), f, indent=2)
-
-        ## Now create a log file, with appended log as 'job created', for which I will append a log after that
-        self.add_log(job_id=job_id, log=JobLog(timeStamp=datetime.now(
-                        ZoneInfo("Asia/Kolkata")
-                    ).isoformat(), message=f"Created the job with id: {job_id} successfully.", type=LogType.SUCCESS))
-
         return job_id
+    
+    def store_user_data(self,job_id:str, username:str, password:str):
+        """
+        Store user related data like userName, and password.
+        """
+        user_id = str(uuid.uuid4())
+        job_dir = Path("jobs") / job_id
+        created_at = datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
+        userMetadata = UserMetadata(job_id=job_id, created_at=created_at, username=username, password=password)
+        with open(job_dir / "user.json", "w", encoding="utf-8") as f:
+            
+            json.dump(asdict(userMetadata), f, indent=2,default=JobManager.json_serializer)
+        
+    def store_job_metadata(self,job_id: str, address: str, mobile_number: str, screening_date: str):
+        """
+        Storing job related metadata in different place
+        """
+        status = JobStatus.IDLE
+        job_dir = Path("jobs") / job_id
+        created_at = datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
+        jobMetadata = JobMetadata(job_id=job_id, status=status, created_at=created_at, address=address, mobile_number=mobile_number, date=screening_date)
+        with open(job_dir / "job.json", "w", encoding="utf-8") as f:
+            json.dump(asdict(jobMetadata), f, indent=2,default=JobManager.json_serializer)
+
+    def upload_file(self,job_id:str, uploaded_file: UploadFile):
+        """
+        Upload the file to jobs/job_id/uploaded.csv, and also update jobMetadata present in jobs/job_id/job.json, change it to JobMetadata, and append the 
+        uplloaded file path, and then save it again
+        """
+        job_dir = Path("jobs") / job_id
+
+        # Preserve extension
+        extension = Path(uploaded_file.filename).suffix
+        file_path = job_dir / f"uploaded{extension}"
+
+        # Save the uploaded file
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(uploaded_file.file, buffer)
+
+        # Load existing metadata
+        job_metadata = self._load_job_metadata(job_id)
+
+        # Update metadata
+        job_metadata.uploaded_file = str(file_path)
+
+        # Save metadata
+        self._save_job_metadata(job_metadata)
+
+        return str(file_path)
+
+    def upload_institution_data(self,job_id: str,institution_data: InstitutionData):
+        """
+        Get job_metadata file : jobs/job_id/job.json, change it to jobMetadata type, and edit institutiondata.
+        """
+        job_metadata = self._load_job_metadata(job_id)
+
+        job_metadata.institution_data = institution_data
+
+        self._save_job_metadata(job_metadata)
+
+
 
     @staticmethod
     def update_job_status(status: JobStatus, job_id : str) -> bool:
@@ -103,7 +155,7 @@ class JobManager:
             data["status"] = status.value
 
             with open(job_file, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2)
+                json.dump(data, f, indent=2,default=JobManager.json_serializer)
 
             JobManager.add_log(job_id, JobLog(timeStamp=datetime.now(
                         ZoneInfo("Asia/Kolkata")
@@ -194,7 +246,7 @@ class JobManager:
         return log
     
     @staticmethod
-    def get_uploaded_file_path(job_id: str) -> Path:
+    def get_uploaded_file_path(job_id: str) -> Path | None:
         """
         Returns uploaded file path, so that we can run the job
 
@@ -204,7 +256,12 @@ class JobManager:
         Returns: 
         path: Path = file path of the data
         """
-        return Path("jobs") / job_id / "uploaded.csv"
+        path = Path("jobs") / job_id / "uploaded.csv"
+
+        if path.exists():
+            return path
+
+        return None
     
     @staticmethod
     def get_job_metadata(job_id: str) -> JobMetadata:
@@ -228,6 +285,27 @@ class JobManager:
 
         return JobMetadata(**data)
     
+    @staticmethod
+    def get_user_metadata(job_id: str) -> UserMetadata:
+        """
+        This function returns the metadata related to user, so that we can get small things about the jobs
+
+        Params:
+        job_id: str => job id of the job you want the metadata of.
+
+        Returns:
+        jobMetadata: JobMetadata => All metadata related to the job
+        """
+
+        user_file = Path("jobs") / job_id / "user.json"
+
+        if not user_file.exists():
+            raise FileNotFoundError(f"Job {job_id} does not exist")
+
+        with open(user_file, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        return UserMetadata(**data)
     @staticmethod
     def get_current_status(job_id: str) -> JobStatus:
         """

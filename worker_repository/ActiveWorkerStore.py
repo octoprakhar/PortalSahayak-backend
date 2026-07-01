@@ -1,8 +1,7 @@
-import logging
+from worker.WorkerAbstract import WorkerAbstract
 
-from worker.Worker import Worker
+from constants.WorkerType import WorkerType
 
-from all_models.WorkerContext import WorkerContext
 
 
 class ActiveWorkerStore:
@@ -11,43 +10,80 @@ class ActiveWorkerStore:
     It will create new worker
     We can get that worker with that help of job id.
     And also we can delete the worker in the repository
+
+    My worker will have like this jobId: [workerType]
     """
 
-    ## For now in-memory workers will be there dict of [job_id: Worker]
-    active_workers: dict[str,Worker] = {}
+    ## For now in-memory workers will be there dict of [job_id: {workerType, WorkerAbstract}]
+    active_workers: dict[str, dict[WorkerType, WorkerAbstract]] = {}
+
 
     @classmethod
-    def create_worker(cls, job_id: str, worker_context: WorkerContext) -> Worker:
-        """
-        It just creates the new worker
+    def register_worker(
+        cls,
+        job_id: str,
+        worker_type: WorkerType,
+        worker: WorkerAbstract,
+    ) -> WorkerAbstract:
 
-        Returns:
-        worker: Worker = Worker instance of the current worker, so that it can call and send message to it's mailbox
-        """
-        try: 
-            worker_instance = Worker(job_id=job_id, worker_context=worker_context)
-            cls.active_workers[job_id] = worker_instance
+        cls.active_workers.setdefault(job_id, {})
+        cls.active_workers[job_id][worker_type] = worker
 
-            return worker_instance
-
-        except Exception as e:
-            logging.exception("ActiveWorkerStore: Error occured while creating worker")
-            raise
-        
+        return worker
+    
     @classmethod
-    def get_worker(cls,job_id: str) -> Worker:
+    def get_worker(cls,job_id: str, worker_type: WorkerType) -> WorkerAbstract:
         """
         It is used when worker is already created, and we have job id, and we can get the worker now
         """
-        return cls.active_workers[job_id]
+        return cls.active_workers[job_id][worker_type]
     
     @classmethod
-    def remove_worker(cls, job_id: str):
+    def has_worker(
+        cls,
+        job_id: str,
+        worker_type: WorkerType,
+    ) -> bool:
+        """
+        Check if a worker exists.
+        """
+        return (
+            job_id in cls.active_workers
+            and worker_type in cls.active_workers[job_id]
+        )
+    
+    @classmethod
+    def remove_worker(cls, job_id: str, worker_type: WorkerType):
         """
         It will destroy the worker
         """
-        worker = cls.get_worker(job_id=job_id)
+        worker = cls.get_worker(job_id=job_id,worker_type=worker_type)
         ## TODO : Step 1: Call workers close browser function to close the page instance, and also if there is the thread then remove it
 
         ## Step 2: Remove worker from the repository
-        del cls.active_workers[job_id]
+        del cls.active_workers[job_id][worker_type]
+
+        # Remove the job entry if no workers remain.
+        if not cls.active_workers[job_id]:
+            del cls.active_workers[job_id]
+    
+    @classmethod
+    def remove_all_workers(cls, job_id: str):
+        workers = cls.active_workers.get(job_id)
+
+        if not workers:
+            return
+
+        # Copy the keys because remove_worker() modifies the dict.
+        for worker_type in list(workers.keys()):
+            cls.remove_worker(job_id, worker_type)
+
+    @classmethod
+    def get_all_workers(
+        cls,
+        job_id: str,
+    ) -> dict[WorkerType, WorkerAbstract]:
+        """
+        Get all workers for a job.
+        """
+        return cls.active_workers.get(job_id, {})

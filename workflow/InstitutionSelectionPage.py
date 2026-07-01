@@ -49,6 +49,26 @@ class InstitutionSelectionPage:
         except Exception as e:
             logging.exception(f"Exception occured while reading response of all institutions: \n{e}")
             return {}
+    
+    @staticmethod
+    def go_to_institution_month(page:Page, synchronizer: PageSynchronizer, date: str):
+        """
+        If we are in screening page, it will help in taking to that specific month, by selecting month and clicking search
+        """
+        try:
+            ## Wait for loading to complete
+            synchronizer.wait_loading(page)
+            mht_select = page.locator("select[name=mht]")
+            synchronizer.wait_for_institution_page_ready(mht_select=mht_select)
+            ##Step 1: Select the month and then click select, 
+            month = date_to_month_year(date)
+            page.locator('[name="financialMonth"]').select_option(label=month)
+            search_btn = page.get_by_role("button",name="Search")
+            search_btn.click()
+
+        except Exception as e:
+            logging.exception("InstitutionSelectionPage: Error occured while selecting month in institution page")
+            raise
         
     def _map_to_institutions(
         self,
