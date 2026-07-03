@@ -7,7 +7,9 @@ from worker.EventListnerAbstract import EventListnerAbstract
 
 from constants.Events import Events
 from all_models.WorkerEvent import WorkerEvent
+from all_models.FacilityCatalog import FacilityCatalog
 from bridge.WorkerEventBridge import WorkerEventBridge
+
 
 from websocket.WebsocketManager import WebsocketManger
 
@@ -62,6 +64,16 @@ class WebsocketListner(EventListnerAbstract):
             }
             self.event_bridge.dispatch(coroutine=self.websocket_manager.send(job_id=event.job_id,payload=payload))
 
+        if event.event == Events.FACILITY_CATALOG_FETCHED:
+            facilityCatalog: FacilityCatalog = event.payload["facility_catalog"]
+            payload = {
+                "event": event.event.value,
+                "payload": {
+                    "facilities_by_type":facilityCatalog.facilities_by_type
+                }
+            }
+            self.event_bridge.dispatch(coroutine=self.websocket_manager.send(job_id=event.job_id,payload=payload))
+
         if event.event == Events.INSTITUTION_SELECTED:
 
             payload = {
@@ -72,7 +84,7 @@ class WebsocketListner(EventListnerAbstract):
             logging.info(f"Institution selected emitted")
             self.event_bridge.dispatch(coroutine=self.websocket_manager.send(job_id=event.job_id,payload=payload))
         
-        if event.event == Events.USER_AUTHENTICATION_FAILED:
+        if event.event == Events.USER_AUTHENTICATION_FAILED or event.event == Events.FETCHING_FACILITY_FAILED:
 
             payload = {
                 "event": event.event.value,

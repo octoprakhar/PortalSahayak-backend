@@ -65,6 +65,10 @@ class PersistenceListener(EventListnerAbstract):
         if event.event == Events.INSTITUTION_FETCHED:
             pass
 
+        if event.event == Events.FACILITY_CATALOG_FETCHED:
+            ## TODO: save this fetched facility with user id, to the db
+            pass
+
         if event.event == Events.INSTITUTION_SELECTED:
             ## TODO : save that institution in the persistant database.
             self._update_job_status(newStatus=JobStatus.RUNNING, job_id=event.job_id)

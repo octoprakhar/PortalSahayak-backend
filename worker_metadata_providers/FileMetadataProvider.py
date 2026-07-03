@@ -25,8 +25,8 @@ class FileMetadataProvider(MetadataProvider):
                 ## For initial times, when user just registers job metadata is not present, but if any worker comes to get context
                 ## Obviously it is only asking for user metadata, So let's just make job metadata empty. So for them context will be userMetadata only
                 
-                return WorkerContext(userName=userMetadata.username,password=userMetadata.password,address="", mobile_number="",planned_date="")
+                return WorkerContext(userName=userMetadata.username,password=userMetadata.password,address="", mobile_number="",planned_date="",user_registration_metadata=userMetadata.registration_metadata)
             
-            return WorkerContext(userName=userMetadata.username, password=userMetadata.password, address=jobMetadata.address, mobile_number=jobMetadata.mobile_number, planned_date=jobMetadata.date, uploaded_file_path=jobMetadata.uploaded_file, institution_data=jobMetadata.institution_data)
+            return WorkerContext(userName=userMetadata.username, password=userMetadata.password, address=jobMetadata.address, mobile_number=jobMetadata.mobile_number, planned_date=jobMetadata.date, uploaded_file_path=jobMetadata.uploaded_file, institution_data=jobMetadata.institution_data,user_registration_metadata=userMetadata.registration_metadata)
         except Exception as e:
             raise Exception(str(e))

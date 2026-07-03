@@ -22,32 +22,27 @@ class UserMetadataWorker(WorkerAbstract):
         self.playwright: Playwright = None
 
     def _handle_get_user_metadata(self,message:Message):
-        try:
-            runtimeManager = RunTimeManager(job_id=self.job_id, logger=self.log)
+        runtimeManager = RunTimeManager(job_id=self.job_id, logger=self.log)
 
-            runtime_job = runtimeManager.launch_browser_instance()
+        runtime_job = runtimeManager.launch_browser_instance()
 
-            self.page = runtime_job.page
-            self.browser = runtime_job.browser
-            self.context = runtime_job.context
-            self.playwright = runtime_job.playwright
+        self.page = runtime_job.page
+        self.browser = runtime_job.browser
+        self.context = runtime_job.context
+        self.playwright = runtime_job.playwright
         
 
-            userName = self.worker_context.userName
-            password = self.worker_context.password
-            result = runtimeManager.get_user_registration_metadata(page=self.page, userName=userName, password=password)
-            print(f"Got results as \n{result}")
+        userName = self.worker_context.userName
+        password = self.worker_context.password
+        result = runtimeManager.get_user_registration_metadata(page=self.page, userName=userName, password=password)
+        print(f"Got results as \n{result}")
 
-            if result["status_Code"] == '401' or result['status_Code'] == '423':
-                self._emit_event(event=Events.USER_AUTHENTICATION_FAILED)
-                return
-            user = result["data"]["user"]
-            registrationMetadata = UserRegistrationMetadata(user_name=user["userName"],district_id=user["district_ID"], health_block_id=user["healthBlock_ID"],state_id=user["state_ID"],mht_code=user["mhT_Code"])
-            self._emit_event(event=Events.REGISTRATION_METADATA_FETCHED, payload={"registrationMetadata":registrationMetadata})
-            
-        except Exception:
-            self._emit_event(event=Events.JOB_FAILED,payload={"error":"Error while collecting user metadata."})
-            raise
+        if result["status_Code"] == '401' or result['status_Code'] == '423':
+            self._emit_event(event=Events.USER_AUTHENTICATION_FAILED)
+            return
+        user = result["data"]["user"]
+        registrationMetadata = UserRegistrationMetadata(user_name=user["userName"],district_id=user["district_ID"], health_block_id=user["healthBlock_ID"],state_id=user["state_ID"],mht_code=user["mhT_Code"])
+        self._emit_event(event=Events.REGISTRATION_METADATA_FETCHED, payload={"registrationMetadata":registrationMetadata})
                 
 
     def _process_command(self, message:Message):

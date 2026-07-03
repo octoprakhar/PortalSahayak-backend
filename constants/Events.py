@@ -16,6 +16,8 @@ class Events(Enum):
     7. LOG_MESSAGE: It is the event that will be thrown when new log message must needed to get written.
     8. REGISTRATION_METADATA_FETCHED: When we fetch the metadata after user has send us the detail
     9. USER_AUTHENTICATION_FAILED: Credentials given by user is wrong
+    10. FACILITY_CATALOG_FETCHED: Facility related to a user is fetched and catalog is ready.
+    11. FETCHING_FACILITY_FAILED: Error occured while fetching the facility
 
     NOTE: For v1, JOB_CREATED,LOGIN_COMPLETED,INSTITUTION_FETCHED: is considered the state with api call to 'create-job', and the 'REPORT_CREATED'
     will be for api request 'start-screening'.
@@ -29,3 +31,5 @@ class Events(Enum):
     JOB_FAILED = "job_failed"
     REPORT_CREATED= "report_created"
     LOG_MESSAGE="log_message"
+    FACILITY_CATALOG_FETCHED = "facility_catalog_fetched"
+    FETCHING_FACILITY_FAILED = "fetching_facility_failed"

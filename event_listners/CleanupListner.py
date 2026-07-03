@@ -16,7 +16,7 @@ class CleanupListner(EventListnerAbstract):
             worker.shutdown()
             ActiveWorkerStore.remove_worker(job_id=event.job_id,worker_type=WorkerType.INSTITUTION_DATA_WORKER)
 
-        if event.event == Events.JOB_FAILED or event.event == Events.REPORT_CREATED or event.event == Events.USER_AUTHENTICATION_FAILED:
+        if event.event == Events.JOB_FAILED or event.event == Events.REPORT_CREATED or event.event == Events.USER_AUTHENTICATION_FAILED or event.event == Events.FETCHING_FACILITY_FAILED:
             ## Shutdown all the worker, and remove it from the directory
             workers = ActiveWorkerStore.get_all_workers(job_id=event.job_id)
             for worker in workers.values():
@@ -29,3 +29,9 @@ class CleanupListner(EventListnerAbstract):
             worker = ActiveWorkerStore.get_worker(job_id=event.job_id, worker_type=WorkerType.USER_METADATA_WORKER)
             worker.shutdown()
             ActiveWorkerStore.remove_worker(job_id=event.job_id,worker_type=WorkerType.USER_METADATA_WORKER)
+        
+        if event.event == Events.FACILITY_CATALOG_FETCHED:
+            ## Remove the facility worker
+            worker = ActiveWorkerStore.get_worker(job_id=event.job_id, worker_type=WorkerType.FACILITY_WORKER)
+            worker.shutdown()
+            ActiveWorkerStore.remove_worker(job_id=event.job_id,worker_type=WorkerType.FACILITY_WORKER)

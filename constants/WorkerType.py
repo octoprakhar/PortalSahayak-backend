@@ -7,3 +7,4 @@ class WorkerType(Enum):
     INSTITUTION_DATA_WORKER= "institution_data_worker"
     SCREENING_WORKER = "screening_worker"
     USER_METADATA_WORKER = "user_metadata_worker"
+    FACILITY_WORKER = "facility_worker"
