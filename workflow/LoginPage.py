@@ -40,6 +40,29 @@ class LoginPage:
             logging.exception("Could not parse login response")
             return {}
 
+    def get_authenticate_user_response(self,userName:str, password: str) -> dict:
+        # print("Authenticated user response triggered")
+        """
+        When user logged in, there metadata can be got through response body of /authenticate user
+        """
+        # Step 1: fill userName
+        
+        self.page.get_by_placeholder("Username").fill(userName)
+
+        # Step 2: Fill password
+        self.page.get_by_placeholder("Password").fill(password)
+
+        # Step 3 : fill captcha
+        self._fill_captcha()
+
+        ## Step 4: click login
+
+        ## Check whether response came if not invalid credentials
+        response_data = self._get_login_response()
+
+        return response_data
+
+
     def login(self, userName: str, password: str) -> FeedbackResult:
         # Step 1: fill userName
         

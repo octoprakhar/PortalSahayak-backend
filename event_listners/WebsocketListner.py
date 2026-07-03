@@ -55,6 +55,13 @@ class WebsocketListner(EventListnerAbstract):
             }
             self.event_bridge.dispatch(coroutine=self.websocket_manager.send(job_id=event.job_id,payload=payload))
 
+        if event.event == Events.REGISTRATION_METADATA_FETCHED:
+            payload = {
+                "event": event.event.value,
+                "payload": {} 
+            }
+            self.event_bridge.dispatch(coroutine=self.websocket_manager.send(job_id=event.job_id,payload=payload))
+
         if event.event == Events.INSTITUTION_SELECTED:
 
             payload = {
@@ -63,6 +70,16 @@ class WebsocketListner(EventListnerAbstract):
             }
 
             logging.info(f"Institution selected emitted")
+            self.event_bridge.dispatch(coroutine=self.websocket_manager.send(job_id=event.job_id,payload=payload))
+        
+        if event.event == Events.USER_AUTHENTICATION_FAILED:
+
+            payload = {
+                "event": event.event.value,
+                "payload": {}
+            }
+
+            # logging.info(f"UserAuthentication got failed")
             self.event_bridge.dispatch(coroutine=self.websocket_manager.send(job_id=event.job_id,payload=payload))
         
         if event.event == Events.JOB_FAILED:

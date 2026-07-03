@@ -175,6 +175,17 @@ class RunTimeManager:
             self.logger("Error while running the job. Please retry by closing everying.", LogType.ERROR)
             raise Exception(str(e))
         
+    
+    def get_user_registration_metadata(self,page:Page,userName: str, password: str)-> dict:
+        """
+        Returns the user metadata to the workers
+        """
+        # print("Runtime manager for user metadata is triggered")
+        screening = page.locator('[title="Screening"]')
+        # print("started making login;page")
+        loginPage = LoginPage(page=page, synchronizer=self.synchronizer, success_locator=screening)
+        result = loginPage.get_authenticate_user_response(userName=userName,password=password)
+        return result
 
         
             

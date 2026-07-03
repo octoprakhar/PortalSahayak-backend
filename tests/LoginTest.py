@@ -3,6 +3,7 @@ import logging
 
 from workflow.LoginPage import LoginPage
 from all_models.FeedbackResult import FeedbackResult
+from services.PageSynchronizer import PageSynchronizer
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,8 +18,8 @@ with sync_playwright() as p:
     page.goto(url)
     page.wait_for_timeout(1000)
     screening = page.locator('[title="Screening"]')
-    loginPage = LoginPage(page=page,success_locator=screening)
-    result : FeedbackResult = loginPage.login("LALBARRA-R1","Trapti@1234")
+    loginPage = LoginPage(page=page,success_locator=screening,synchronizer=PageSynchronizer())
+    result = loginPage.get_authenticate_user_response(userName="LALBARRA-R1",password="Trapti@1234")
 
     print(result)
 

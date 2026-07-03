@@ -2,6 +2,7 @@ from dataclasses import dataclass
 
 from constants.job_status import JobStatus
 from all_models.InstitutionData import InstitutionData
+from all_models.UserRegistrationMetadata import UserRegistrationMetadata
 
 @dataclass
 class JobMetadata:

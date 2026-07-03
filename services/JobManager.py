@@ -19,6 +19,7 @@ from all_models.JobMetadata import JobMetadata
 from all_models.ChildRunResult import ChildRunResult
 from all_models.UserMetadata import UserMetadata
 from all_models.InstitutionData import InstitutionData
+from all_models.UserRegistrationMetadata import UserRegistrationMetadata
 
 
 
@@ -56,6 +57,23 @@ class JobManager:
 
         with open(path, "w") as f:
             json.dump(asdict(job_metadata), f, indent=4, default=JobManager.json_serializer)
+    
+    def _load_user_metadata(self, job_id: str) -> UserMetadata:
+        path = f"jobs/{job_id}/user.json"
+
+        with open(path, "r") as f:
+            data = json.load(f)
+
+        return UserMetadata(**data)
+    
+    def _save_user_metadata(
+        self,
+        user_metadata: UserMetadata,
+    ):
+        path = f"jobs/{user_metadata.job_id}/user.json"
+
+        with open(path, "w") as f:
+            json.dump(asdict(user_metadata), f, indent=4, default=JobManager.json_serializer)
 
     
     def construct_job(self) -> str:
@@ -129,6 +147,13 @@ class JobManager:
 
         self._save_job_metadata(job_metadata)
 
+    def upload_user_registration_metadata(self,job_id: str, user_registration_metadata:UserRegistrationMetadata):
+        """
+        Save registration metadata, of user type
+        """
+        user_metadata = self._load_user_metadata(job_id=job_id)
+        user_metadata.registration_metadata = user_registration_metadata
+        self._save_user_metadata(user_metadata=user_metadata)
 
 
     @staticmethod
@@ -264,7 +289,7 @@ class JobManager:
         return None
     
     @staticmethod
-    def get_job_metadata(job_id: str) -> JobMetadata:
+    def get_job_metadata(job_id: str) -> JobMetadata | None:
         """
         This function returns the metadata related to job, so that we can get small things about the jobs
 
@@ -278,7 +303,8 @@ class JobManager:
         job_file = Path("jobs") / job_id / "job.json"
 
         if not job_file.exists():
-            raise FileNotFoundError(f"Job {job_id} does not exist")
+            return None
+            # raise FileNotFoundError(f"Job {job_id} does not exist")
 
         with open(job_file, "r", encoding="utf-8") as f:
             data = json.load(f)

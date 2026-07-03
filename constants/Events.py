@@ -14,6 +14,8 @@ class Events(Enum):
     6. REPORT_CREATED: When all children entries are done and we have created all the report, success_report, and failure_report of students
     with all the data columns we needed.
     7. LOG_MESSAGE: It is the event that will be thrown when new log message must needed to get written.
+    8. REGISTRATION_METADATA_FETCHED: When we fetch the metadata after user has send us the detail
+    9. USER_AUTHENTICATION_FAILED: Credentials given by user is wrong
 
     NOTE: For v1, JOB_CREATED,LOGIN_COMPLETED,INSTITUTION_FETCHED: is considered the state with api call to 'create-job', and the 'REPORT_CREATED'
     will be for api request 'start-screening'.
@@ -22,6 +24,8 @@ class Events(Enum):
     LOGIN_COMPLETED = "login_completed"
     INSTITUTION_FETCHED = "institution_fetched"
     INSTITUTION_SELECTED = "institution_selected"
+    REGISTRATION_METADATA_FETCHED = "registration_metadata_fetched"
+    USER_AUTHENTICATION_FAILED = "user_authentication_failed"
     JOB_FAILED = "job_failed"
     REPORT_CREATED= "report_created"
     LOG_MESSAGE="log_message"

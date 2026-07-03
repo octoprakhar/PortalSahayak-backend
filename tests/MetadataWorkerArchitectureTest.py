@@ -1,4 +1,4 @@
-from worker.metadata_worker.InstitutionDataWorker import InstitutionDataWorker
+from worker.institution_data.InstitutionDataWorker import InstitutionDataWorker
 from all_models.WorkerContext import WorkerContext
 from all_models.Message import Message
 from constants.Commands import Commands

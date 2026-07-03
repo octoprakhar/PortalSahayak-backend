@@ -10,3 +10,4 @@ class Commands(Enum):
     """
     GET_INSTITUTION = "get_institution"
     START_SCREENING = "start_screening"
+    GET_USER_METADATA = "get_user_metadata"

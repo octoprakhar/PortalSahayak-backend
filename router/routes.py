@@ -32,7 +32,9 @@ async def register_job(
     userName: Optional[str] = Form(None),
     password: Optional[str] = Form(None)
 ):
+    services = request.app.state.services
     logging.info("Request came in register sign in user.")
+    
     if not userName or not userName.strip():
         raise HTTPException(
             status_code=400,
@@ -49,11 +51,17 @@ async def register_job(
         jobManager = JobManager() ## For testing
         job_id = jobManager.construct_job()
         jobManager.store_user_data(job_id=job_id, username=userName,password=password)
+
+        ## Create the metadata collector worker
+        workerFactory = WorkerFactory(application_services=services)
+        registration_metadata_worker = workerFactory.create(job_id=job_id, worker_type=WorkerType.USER_METADATA_WORKER)
+        registration_metadata_worker.send(message=Message(job_id=job_id,command=Commands.GET_USER_METADATA,payload={}))
+
         return {"job_id": job_id}
     except Exception as e:
         logging.exception(str(e))
         raise HTTPException(status_code=500,detail="Internal error occured.")
-
+    
 @router.websocket("/ws/{job_id}")
 async def websocket_endpoint(websocket: WebSocket, job_id: str):
     """

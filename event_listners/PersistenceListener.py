@@ -16,6 +16,9 @@ class PersistenceListener(EventListnerAbstract):
     This event listner does all the works, from creating the report, adding logs, updating status etc. 
     I mean all types of work related to database/file management. It will handle all types of persistant work.
     """
+    def __init__(self, event_bridge):
+        super().__init__(event_bridge)
+        self.job_manager = JobManager()
 
     def _add_log(self,message: str, type:LogType, job_id : str):
         jobLog = JobLog(timeStamp=datetime.now(
@@ -45,6 +48,12 @@ class PersistenceListener(EventListnerAbstract):
             self._update_job_status(newStatus=JobStatus.WAITING_INSTITUTION, job_id=event.job_id)
             self._add_log(message="Logged in succesfully, Waiting for institution to get selected", type=LogType.SUCCESS, job_id=event.job_id)
 
+        if event.event == Events.REGISTRATION_METADATA_FETCHED:
+            self._add_log(message="User registration metadata fetched.",type=LogType.SUCCESS,job_id=event.job_id)
+            ## Save registration metadata using jobmanager
+            self.job_manager.upload_user_registration_metadata(job_id=event.job_id,user_registration_metadata=event.payload["registrationMetadata"])
+
+
         if event.event == Events.JOB_FAILED:
             self._update_job_status(newStatus=JobStatus.FAILED, job_id=event.job_id)
             ## TODO: In the future, if the job failed in between saving some children data, so just from the uploaded file reduce that data that 
@@ -66,3 +75,7 @@ class PersistenceListener(EventListnerAbstract):
             ## With their disease(if randomly selected), or other things, whether it was earlier SAM and we had converted, etc. It will also send 
             ## Screening failed child, and validation failed child, we need to compile and save the report here.
             self._update_job_status(newStatus=JobStatus.COMPLETED, job_id=event.job_id)
+        
+        if event.event == Events.USER_AUTHENTICATION_FAILED:
+            ### Remove the whole job related persistant data
+            JobManager.clean_job(job_id=event.job_id)

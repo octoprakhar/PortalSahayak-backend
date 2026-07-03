@@ -2,7 +2,8 @@ import logging
 
 from worker.WorkerAbstract import WorkerAbstract
 from worker.ScreeningWorker import ScreeningWorker
-from worker.metadata_worker.InstitutionDataWorker import InstitutionDataWorker
+from worker.institution_data.InstitutionDataWorker import InstitutionDataWorker
+from worker.user_metadata.UserMetadataWorker import UserMetadataWorker
 
 from worker.MetadataProvider import MetadataProvider
 from worker_metadata_providers.FileMetadataProvider import FileMetadataProvider
@@ -32,6 +33,7 @@ class WorkerFactory:
         self.WORKER_MAP: dict[WorkerType, type[WorkerAbstract]] = {
             WorkerType.INSTITUTION_DATA_WORKER: InstitutionDataWorker,
             WorkerType.SCREENING_WORKER: ScreeningWorker,
+            WorkerType.USER_METADATA_WORKER: UserMetadataWorker
         }
 
     def _get_context(self, job_id: str) -> WorkerContext:
