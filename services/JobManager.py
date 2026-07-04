@@ -147,6 +147,23 @@ class JobManager:
 
         self._save_job_metadata(job_metadata)
 
+    def get_institution_data(self,job_id: str) -> InstitutionData | None:
+        """
+        Get the data of the user selected institution
+        """
+        job_metadata = self._load_job_metadata(job_id=job_id)
+        if not job_metadata.institution_data:
+            return None
+        return job_metadata.institution_data
+    
+    def get_uploaded_file_path(self,job_id: str) -> str | None:
+        job_metadata = self._load_job_metadata(job_id)
+        if not job_metadata.uploaded_file:
+            return None
+        
+        return job_metadata.uploaded_file
+
+
     def upload_user_registration_metadata(self,job_id: str, user_registration_metadata:UserRegistrationMetadata):
         """
         Save registration metadata, of user type
@@ -172,21 +189,56 @@ class JobManager:
 
         ## FOr now go to the file jobs/job_id/job.json, and update the status key 
         try:
-            job_file = Path("jobs") / job_id / "job.json"
+            job_dir = Path("jobs") / job_id
+            job_dir.mkdir(parents=True, exist_ok=True)
 
-            with open(job_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
+            job_file = job_dir / "job.json"
 
+            if job_file.exists():
+                with open(job_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                metadata = JobMetadata(
+                    job_id=job_id,
+                    status=status,
+                    created_at=datetime.now(
+                        ZoneInfo("Asia/Kolkata")
+                    ).isoformat(),
+                    address="",
+                    mobile_number="",
+                    date="",
+                    uploaded_file="uploaded.csv",
+                    institution_data=None,
+                )
+
+                data = asdict(metadata)
+
+                # Convert enum to its value
+                data["status"] = metadata.status.value
+
+            # Update status
             data["status"] = status.value
 
             with open(job_file, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2,default=JobManager.json_serializer)
+                json.dump(
+                    data,
+                    f,
+                    indent=2,
+                    default=JobManager.json_serializer,
+                )
 
-            JobManager.add_log(job_id, JobLog(timeStamp=datetime.now(
+            JobManager.add_log(
+                job_id,
+                JobLog(
+                    timeStamp=datetime.now(
                         ZoneInfo("Asia/Kolkata")
-                    ).isoformat(),message=f"Updated the Job status of {job_id} to {status}"))
+                    ).isoformat(),
+                    message=f"Updated the Job status of {job_id} to {status}",
+                ),
+            )
 
             return True
+
         except Exception as e:
             raise RuntimeError("Error while updating status") from e
 
@@ -309,7 +361,7 @@ class JobManager:
         with open(job_file, "r", encoding="utf-8") as f:
             data = json.load(f)
 
-        return JobMetadata(**data)
+        return JobMetadata.from_dict(data)
     
     @staticmethod
     def get_user_metadata(job_id: str) -> UserMetadata:

@@ -69,3 +69,28 @@ class PageSynchronizer:
                 return el && el.value !== '0';
             }
             """)
+    
+    def wait_for_all_toast_disappear(
+        self,
+        page: Page,
+        timeout: int = 15000,
+    ):
+        """
+        Wait until all visible Toastify notifications disappear.
+
+        Handles success, error, warning, info, etc.
+        """
+
+        try:
+            page.wait_for_function(
+                """
+                () => {
+                    return document.querySelectorAll(
+                        '.Toastify__toast[data-in="true"]'
+                    ).length === 0;
+                }
+                """,
+                timeout=timeout,
+            )
+        except TimeoutError:
+            raise Exception("Toast notification(s) did not disappear.")

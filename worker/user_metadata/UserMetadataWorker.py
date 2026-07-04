@@ -35,7 +35,7 @@ class UserMetadataWorker(WorkerAbstract):
         userName = self.worker_context.userName
         password = self.worker_context.password
         result = runtimeManager.get_user_registration_metadata(page=self.page, userName=userName, password=password)
-        print(f"Got results as \n{result}")
+        # print(f"Got results as \n{result}")
 
         if result["status_Code"] == '401' or result['status_Code'] == '423':
             self._emit_event(event=Events.USER_AUTHENTICATION_FAILED)

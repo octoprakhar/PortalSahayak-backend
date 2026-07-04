@@ -34,8 +34,14 @@ class ScreeningWorker(WorkerAbstract):
             raise Exception("Wrong command has thrown")
         
         payload = message.payload
-        institution_data_dict = self.worker_context.institution_data
-        institution_data = InstitutionData(institution_name=institution_data_dict["institution_name"], institution_plan_id=institution_data_dict["institution_plan_id"],institution_type=institution_data_dict["institution_type"],planned_date=institution_data_dict["planned_date"])
+        institution_name = payload["institution_name"]
+        institution_plan_id = payload["institution_plan_id"]
+        institution_type = payload["institution_type"]
+        planned_date = payload["planned_date"]
+        uploaded_file_path = payload["uploaded_file_path"]
+        mobile_number = payload["mobile_number"]
+        address = payload["address"]
+        institution_data = InstitutionData(institution_name=institution_name, institution_plan_id=institution_plan_id,institution_type=institution_type,planned_date=planned_date)
         print(f"Got type of institution data as {type(institution_data)}, and it is {institution_data}")
         if not institution_data:
             self._emit_event(event=Events.JOB_FAILED, payload={"error":"Institution data is not present"})
@@ -57,10 +63,10 @@ class ScreeningWorker(WorkerAbstract):
         self.job_state = JobStatus.LOGGING_IN
         userName = self.worker_context.userName
         password = self.worker_context.password
-        uploaded_file_path = self.worker_context.uploaded_file_path
-        address = self.worker_context.address
-        mobile_number = self.worker_context.mobile_number
-        screening_date = self.worker_context.planned_date
+        uploaded_file_path = uploaded_file_path
+        address = address
+        mobile_number = mobile_number
+        screening_date = planned_date
 
         runtimeManger.login_user(self.page, userName=userName, password=password)
         self._emit_event(Events.LOGIN_COMPLETED)

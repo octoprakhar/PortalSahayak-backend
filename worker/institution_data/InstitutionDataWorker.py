@@ -31,6 +31,7 @@ class InstitutionDataWorker(WorkerAbstract):
 
         """
         payload = message.payload
+        planned_date = payload["planned_date"]
         
         runtimeManger = RunTimeManager(job_id=self.job_id, logger=self.log)
 
@@ -52,7 +53,7 @@ class InstitutionDataWorker(WorkerAbstract):
 
 
 
-        institution_data = runtimeManger.start_select_institution_stage(page=self.page, screening_date=self.worker_context.planned_date)
+        institution_data = runtimeManger.start_select_institution_stage(page=self.page, screening_date=planned_date)
         print(f"InstitutionDataWorker: Got institution data: \n{institution_data}")
         self._emit_event(Events.INSTITUTION_FETCHED, payload=institution_data)
 

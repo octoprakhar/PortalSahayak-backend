@@ -56,6 +56,8 @@ async def register_job(
         workerFactory = WorkerFactory(application_services=services)
         registration_metadata_worker = workerFactory.create(job_id=job_id, worker_type=WorkerType.USER_METADATA_WORKER)
         registration_metadata_worker.send(message=Message(job_id=job_id,command=Commands.GET_USER_METADATA,payload={}))
+        ## Just create the worker, not send the event
+        facility_worker = workerFactory.create(job_id=job_id, worker_type=WorkerType.FACILITY_WORKER)
 
         return {"job_id": job_id}
     except Exception as e:
@@ -119,7 +121,7 @@ async def post_job_metadata(
         ## Now create worker for institution work
         workerFactory = WorkerFactory(application_services=services)
         institution_worker = workerFactory.create(job_id=job_id, worker_type=WorkerType.INSTITUTION_DATA_WORKER)
-        institution_worker.send(message=Message(job_id=job_id,command=Commands.GET_INSTITUTION,payload={}))
+        institution_worker.send(message=Message(job_id=job_id,command=Commands.GET_INSTITUTION,payload={"planned_date":date}))
         return {"job_id": job_id}
     except Exception as e:
         logging.exception(str(e))
@@ -207,10 +209,21 @@ def start_job_screeninhg(request:Request,job_id: Optional[str] = Form(None),uplo
         jobManager = JobManager()
         jobManager.upload_file(job_id=job_id,uploaded_file=uploaded_file)
 
+        ## Get uploaded file path
+        job_metadata = JobManager.get_job_metadata(job_id=job_id)
+
+        if not job_metadata:
+            logging.error(f"Can't get job metadata")
+            return {"error": "Cannot find user metadata."}
+        
+        logging.info(f"Got job_metadata of type : {type(job_metadata)}")
+        
+        
         ## Create screening worker and pass the command for start screening
         workerFactory = WorkerFactory(application_services=services)
         screening_worker = workerFactory.create(job_id=job_id, worker_type=WorkerType.SCREENING_WORKER)
-        screening_worker.send(message=Message(job_id=job_id,command=Commands.START_SCREENING, payload={}))
+        screening_worker.send(message=Message(job_id=job_id,command=Commands.START_SCREENING, payload={"institution_name":job_metadata.institution_data.institution_name, "institution_plan_id":job_metadata.institution_data.institution_plan_id, "institution_type": job_metadata.institution_data.institution_type, "planned_date": job_metadata.date, "uploaded_file_path": job_metadata.uploaded_file, "address": job_metadata.address, "mobile_number": job_metadata.mobile_number}))
         return {"status":"ok","job_id":job_id}
     except Exception as e:
-        return {"error":str(e)}
+        logging.exception(str(e))
+        raise HTTPException(status_code=500,detail="Internal error occured.")

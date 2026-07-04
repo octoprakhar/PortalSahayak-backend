@@ -1,5 +1,6 @@
 from playwright.sync_api import Page,sync_playwright
 from typing import Callable
+import re
 
 from constants.log_type import LogType
 from all_models.RuntimeJob import RuntimeJob
@@ -153,10 +154,16 @@ class RunTimeManager:
                 institutionPage.select_institution(institution_data=institution_data, is_ANM_present=is_ANM_Present)
 
             self.synchronizer.wait_loading(page=page)
-            page.get_by_role('button',name="Add New Child").wait_for(
+            self.synchronizer.wait_for_all_toast_disappear(page=page)
+            print(page.get_by_text("Add New Student").count())
+            page.get_by_role(
+                "button",
+                name="Add New Child"
+            ).wait_for(
                 state="visible",
                 timeout=3000
             )
+            # re.compile(r"^Add New (Child|Student)$")
         except Exception as e:
             self.logger("Institution is not selected please select the institution", LogType.ERROR)
             raise

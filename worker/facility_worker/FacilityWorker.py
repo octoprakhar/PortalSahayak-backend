@@ -10,11 +10,13 @@ from constants.Commands import Commands
 from constants.Events import Events
 from all_models.FacilityCatalog import FacilityCatalog
 from all_models.WorkerContext import WorkerContext
-
+from all_models.UserRegistrationMetadata import UserRegistrationMetadata
 ## dto models
 from all_models.dto.request.FacilityTypeRequest import FacilityTypeRequest
 from all_models.dto.request.FacilityNameRequest import FacilityNameRequest
 from all_models.dto.response.FacilityTypeResponse import FacilityTypeResponse, FacilityData
+
+
 
 class FacilityWorker(WorkerAbstract):
     """
@@ -47,9 +49,9 @@ class FacilityWorker(WorkerAbstract):
 
         return has_block and has_nrc and (has_deic or has_district)
 
-    def _fetch_all_facility_type(self) -> list[FacilityData]:
+    def _fetch_all_facility_type(self, stateId: int) -> list[FacilityData]:
         # print('Fetching facility types')
-        request_body = FacilityTypeRequest(masterType=self.masterType_for_fetching_facility_type, stateID=self.worker_context.user_registration_metadata.state_id)
+        request_body = FacilityTypeRequest(masterType=self.masterType_for_fetching_facility_type, stateID=stateId)
         response = requests.post(self.facility_fetching_url, json=asdict(request_body), verify=False)
 
 
@@ -68,11 +70,11 @@ class FacilityWorker(WorkerAbstract):
         
         
 
-    def _fetch_facilities_by_type(self,facility_type: FacilityData) -> list[str]:
+    def _fetch_facilities_by_type(self,facility_type: FacilityData, state_id: int, district_id: int, mht_id: int, health_block_id: int) -> list[str]:
         """
         Just return the names list of each facility type
         """
-        request_body = FacilityNameRequest(masterType=self.masterType_for_fetching_facility_names, stateID=self.worker_context.user_registration_metadata.state_id, districtID=self.worker_context.user_registration_metadata.district_id, healthBlockID=self.worker_context.user_registration_metadata.health_block_id, mhtid=self.worker_context.user_registration_metadata.mht_code, facilityType=facility_type.code)
+        request_body = FacilityNameRequest(masterType=self.masterType_for_fetching_facility_names, stateID=state_id, districtID=district_id, healthBlockID=health_block_id, mhtid=mht_id, facilityType=facility_type.code)
 
         response = requests.post(url=self.facility_fetching_url,json=asdict(request_body),verify=False)
 
@@ -89,16 +91,17 @@ class FacilityWorker(WorkerAbstract):
 
 
     def _handle_catalog_creation(self,message:Message):
+        registrationMetadata : UserRegistrationMetadata = message.payload["registrationMetadata"]
         # print("handle facility is called")
         facilities_by_type = {}
-        all_facility_types = self._fetch_all_facility_type()
+        all_facility_types = self._fetch_all_facility_type(stateId=registrationMetadata.state_id)
         # print(f"Got facility list as : {all_facility_types}")
         if not all_facility_types or len(all_facility_types) == 0:
             self._emit_event(event=Events.FETCHING_FACILITY_FAILED)
             return
    
         for facility_type in all_facility_types:
-            all_facilities_of_a_type = self._fetch_facilities_by_type(facility_type=facility_type)
+            all_facilities_of_a_type = self._fetch_facilities_by_type(facility_type=facility_type, state_id=registrationMetadata.state_id, district_id=registrationMetadata.district_id, mht_id=registrationMetadata.mht_code, health_block_id=registrationMetadata.health_block_id)
             facilities_by_type[facility_type.name] = all_facilities_of_a_type
 
         if not self._has_required_facilities(facilities_by_type):

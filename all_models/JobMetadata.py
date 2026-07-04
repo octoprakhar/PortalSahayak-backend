@@ -8,10 +8,21 @@ from all_models.UserRegistrationMetadata import UserRegistrationMetadata
 class JobMetadata:
     job_id: str
     status: JobStatus
-    created_at : str
+    created_at: str
     address: str
     mobile_number: str
     date: str
     uploaded_file: str = "uploaded.csv"
-    institution_data : InstitutionData = None
+    institution_data: InstitutionData = None
 
+    @classmethod
+    def from_dict(cls, data: dict):
+        data = data.copy()
+
+        if data.get("institution_data"):
+            data["institution_data"] = InstitutionData(**data["institution_data"])
+
+        if isinstance(data.get("status"), str):
+            data["status"] = JobStatus(data["status"])
+
+        return cls(**data)
