@@ -20,6 +20,7 @@ from all_models.ChildRunResult import ChildRunResult
 from all_models.UserMetadata import UserMetadata
 from all_models.InstitutionData import InstitutionData
 from all_models.UserRegistrationMetadata import UserRegistrationMetadata
+from all_models.FacilityCatalog import FacilityCatalog
 
 
 
@@ -110,6 +111,46 @@ class JobManager:
         jobMetadata = JobMetadata(job_id=job_id, status=status, created_at=created_at, address=address, mobile_number=mobile_number, date=screening_date)
         with open(job_dir / "job.json", "w", encoding="utf-8") as f:
             json.dump(asdict(jobMetadata), f, indent=2,default=JobManager.json_serializer)
+
+    def store_facility_catalog(self, job_id: str, facility_catalog: FacilityCatalog):
+        """
+        For now store it in the job level, but when DB will be there, we will shift it to user level
+
+        For now store it inside jobs/job_id/catalog.json
+        """
+        job_dir = Path("jobs") / job_id
+        job_dir.mkdir(parents=True, exist_ok=True)
+
+        catalog_path = job_dir / "catalog.json"
+
+        with catalog_path.open("w", encoding="utf-8") as f:
+            json.dump(asdict(facility_catalog), f, indent=2)
+
+    def get_job_facility_catalog(self, job_id: str) -> FacilityCatalog | None:
+        """
+        Retrieve the facility catalog for the given job.
+
+        Returns:
+            FacilityCatalog if it exists, otherwise None.
+        """
+        catalog_path = Path("jobs") / job_id / "catalog.json"
+
+        if not catalog_path.exists():
+         return None
+
+        with catalog_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        return FacilityCatalog(**data)
+
+    def saved_mapped_facility(self,job_id: str, mapped_facility: dict[str,str]):
+        """
+        It will take mapped facility and store it in user table
+        """
+        userMetadata = self._load_user_metadata(job_id=job_id)
+        userMetadata.selected_facility = mapped_facility
+        self._save_user_metadata(user_metadata=userMetadata)
+
 
     def upload_file(self,job_id:str, uploaded_file: UploadFile):
         """

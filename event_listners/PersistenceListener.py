@@ -67,7 +67,9 @@ class PersistenceListener(EventListnerAbstract):
 
         if event.event == Events.FACILITY_CATALOG_FETCHED:
             ## TODO: save this fetched facility with user id, to the db
-            pass
+            ## For now saving it inside jobs/job_id/catalog.json
+            self.job_manager.store_facility_catalog(job_id=event.job_id,facility_catalog=event.payload["facility_catalog"])
+
 
         if event.event == Events.INSTITUTION_SELECTED:
             ## TODO : save that institution in the persistant database.

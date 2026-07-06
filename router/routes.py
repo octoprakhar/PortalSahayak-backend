@@ -15,6 +15,8 @@ from factory.WorkerFactory import WorkerFactory
 from constants.Commands import Commands
 from constants.WorkerType import WorkerType
 from websocket.WebsocketManager import WebsocketManger
+from all_models.dto.request.FacilityMappingRequest import FacilityMappingRequest
+from all_models.FacilityCatalog import FacilityCatalog
 
 
 
@@ -63,6 +65,109 @@ async def register_job(
     except Exception as e:
         logging.exception(str(e))
         raise HTTPException(status_code=500,detail="Internal error occured.")
+    
+@router.post("/map-facility")
+async def map_facility(data: FacilityMappingRequest):
+    selected_facility = data.selected_facility
+    job_id = data.job_id
+    logging.info(f"Called map facility with got selected_facility as {selected_facility}")
+
+    if not job_id or not job_id.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Job ID is required"
+        )
+    
+    if not selected_facility:
+        raise HTTPException(
+            status_code=400,
+            detail="Job ID is required"
+        )
+    try:
+
+        jobManager = JobManager()
+        facility_catalog: FacilityCatalog = jobManager.get_job_facility_catalog(job_id=job_id)
+        
+
+        if not facility_catalog:
+            raise HTTPException(status_code=500,detail="Internal error occured.")
+        
+        catalog = facility_catalog.facilities_by_type
+
+        mandatory_types = [
+            "District Level Facility",
+            "Block Level Facility",
+            "NRC",
+        ]
+
+        # DEIC mandatory only if catalog has DEIC
+        if catalog.get("DEIC"):
+            mandatory_types.append("DEIC")
+        
+        ## Check all 3-4 types, block level, district level, nrc, and deic(if present), is there in dict or not, if not return error
+        ## Check mandatory facility type
+        for facility_type in mandatory_types:
+            if facility_type not in selected_facility:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"{facility_type} is required."
+                )
+            
+        ## Validating every facility mapping
+
+        for facility_type, facility_name in selected_facility.items():
+
+            # Unknown facility type
+            if facility_type not in catalog:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Unknown facility type '{facility_type}'."
+                )
+
+            catalog_facilities = catalog[facility_type]
+
+            # Catalog has no facilities for this type
+            if len(catalog_facilities) == 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"{facility_type} has no available facilities."
+                )
+
+            # Must be exactly one string
+            if not isinstance(facility_name, str):
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"{facility_type} must have exactly one selected facility."
+                )
+
+            facility_name = facility_name.strip()
+
+            if not facility_name:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"{facility_type} cannot be empty."
+                )
+
+            # Must exist under same facility type
+            if facility_name not in catalog_facilities:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"'{facility_name}' is not a valid {facility_type}."
+                )
+
+        ##TODO: When db will be there Check facility names must match with the one of the facility names of the catalog. catalog must be saved inside catalog table to avoid sql injection
+
+        ## Save that mapped facility in user.json UserMetadata, mapped_Facility
+        jobManager.saved_mapped_facility(job_id=job_id, mapped_facility=selected_facility)
+    except Exception as e:
+        logging.exception(str(e))
+        raise HTTPException(status_code=500,detail="Internal error occured.")
+
+    ## Return jobId.
+    return {"job_id":job_id}
+
+
+
     
 @router.websocket("/ws/{job_id}")
 async def websocket_endpoint(websocket: WebSocket, job_id: str):
