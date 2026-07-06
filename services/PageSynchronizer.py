@@ -94,3 +94,28 @@ class PageSynchronizer:
             )
         except TimeoutError:
             raise Exception("Toast notification(s) did not disappear.")
+        
+    def wait_for_facility_names_loaded(self, page: Page):
+        """
+        Wait for Hierarchy_Master/Get_HierarchyMaster(masterType=11)
+        and return the response JSON.
+        """
+
+        response = page.wait_for_response(
+            lambda r: (
+                "Hierarchy_Master/Get_HierarchyMaster" in r.url
+                and r.request.method == "POST"
+                and (
+                    r.request.post_data_json or {}
+                ).get("masterType") == 11
+            ),
+            timeout=30000,
+        )
+
+        if response.status != 200:
+            raise RuntimeError(
+                f"HierarchyMaster request failed "
+                f"({response.status})"
+            )
+
+        return response.json()

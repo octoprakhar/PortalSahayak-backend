@@ -41,6 +41,7 @@ class ScreeningWorker(WorkerAbstract):
         uploaded_file_path = payload["uploaded_file_path"]
         mobile_number = payload["mobile_number"]
         address = payload["address"]
+        selected_facility = payload["selected_facility"]
         institution_data = InstitutionData(institution_name=institution_name, institution_plan_id=institution_plan_id,institution_type=institution_type,planned_date=planned_date)
         print(f"Got type of institution data as {type(institution_data)}, and it is {institution_data}")
         if not institution_data:
@@ -80,7 +81,7 @@ class ScreeningWorker(WorkerAbstract):
         # self._emit_event(event=Events.INSTITUTION_SELECTED, payload={"institution_data": institution_data})
 
         self.job_state = JobStatus.RUNNING
-        runtimeManger.start_child_screening(page=self.page, institution_data=institution_data, is_ANM_Present=is_ANM_Present,screening_date=screening_date,uploaded_file_path=uploaded_file_path,address=address,mobile_number=mobile_number,report_creator=self.report_creator)
+        runtimeManger.start_child_screening(page=self.page, institution_data=institution_data, is_ANM_Present=is_ANM_Present,screening_date=screening_date,uploaded_file_path=uploaded_file_path,address=address,mobile_number=mobile_number,report_creator=self.report_creator,selected_mapping=selected_facility)
         success_path,failure_path = self.report_creator.flush()
         self._emit_event(Events.REPORT_CREATED,payload={"success_path": success_path,"failure_path":failure_path})
     

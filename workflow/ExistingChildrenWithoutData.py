@@ -16,13 +16,14 @@ from constants.WorkflowStage import WorkflowStage
 from constants.ChildType import ChildType
 
 class ExistingChildrenWithoutData:
-    def __init__(self, mobileNumber:str, page:Page,address:str, count_manager: DiseaseCountManager, job_id: str = None, synchronizer : PageSynchronizer = None):
+    def __init__(self, mobileNumber:str, page:Page,address:str, count_manager: DiseaseCountManager, selected_mapping: dict[str,str],job_id: str = None, synchronizer : PageSynchronizer = None):
         self.mobileNumber = mobileNumber
         self.page = page
         self.address = address
         self.job_id = job_id
         self.synchronizer = synchronizer
         self.count_manager = count_manager
+        self.selected_mapping = selected_mapping
 
     def _getNumberOfPages(self) -> int | None:
         page_info = self.page.locator(
@@ -209,7 +210,8 @@ class ExistingChildrenWithoutData:
                         child=created_child,
                         job_id=self.job_id,
                         synchronizer=self.synchronizer,
-                        count_manager=self.count_manager
+                        count_manager=self.count_manager,
+                        selected_mapping=self.selected_mapping
                         
                     )
                     child_result.stage = WorkflowStage.HEALTH_DETAILS

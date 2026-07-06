@@ -23,113 +23,21 @@ from disease.manager.DiseaseCountManager import DiseaseCountManager
 from disease.models.DiseaseDefinition import DiseaseDefinition
 from disease.models.DetectedDisease import DetectedDisease
 
+from facility.manager.FacilityManager import FacilityManager
+from facility.rule.FacilityMappingRule import FacilityMappingRule
+
 class ChildScreeningPage:
-    def __init__(self, page:Page, child:Child, count_manager: DiseaseCountManager, logger: Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None):
+    def __init__(self, page:Page, child:Child, count_manager: DiseaseCountManager,selected_mapping: dict[str,str],logger: Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None):
         self.page = page
         self.child = child
         self.job_id = job_id
         self.count_manager = count_manager
         self.logger = logger
         self.age = get_age(self.child.dob)
-        self.is_to_select_nrc = False
         self.synchronizer = synchronizer
+        self.selected_mapping = selected_mapping
 
     
-    def select_facility(self, facility_type, facility_name, can_add_sam: bool):
-
-        ## TODO Is SAM present
-        refer_checkbox = self.page.locator('#referSameInstitute')
-        refer_checkbox.check()
-
-        referral_section = self.page.locator("div").filter(
-            has_text="Refer to same facility for all Health Conditions"
-        )
-
-    # -----------------------------
-    # FACILITY TYPE
-    # -----------------------------
-        facility_type_input = referral_section.locator(
-            'input[role="combobox"]'
-        ).first
-        facility_name_input = referral_section.locator(
-            'input[role="combobox"]'
-        ).nth(1)
-
-        if can_add_sam:
-            facility_type_input.click()
-            facility_type_input.fill("NRC")
-            option = self.page.get_by_role(
-                "option",
-                name="NRC",
-                exact=True
-            ).first
-
-            option.wait_for(state="visible")
-
-            logging.info(
-                f"Selecting facility type: {option.text_content()}"
-            )
-
-            option.click()
-            facility_name_input.click()
-            facility_name_input.fill("NRC DH BALAGHAT (NRC)")
-            option = self.page.get_by_role(
-                "option",
-                name="NRC DH BALAGHAT (NRC)",
-                exact=True
-            ).first
-
-            option.wait_for(state="visible")
-
-            logging.info(
-                f"Selecting facility name: {option.text_content()}"
-            )
-
-            option.click()
-            
-        else:
-            facility_type_input.click()
-            
-            facility_type_input.fill(facility_type)
-
-            option = self.page.get_by_role(
-                "option",
-                name=facility_type,
-                exact=True
-            ).first
-
-            option.wait_for(state="visible")
-
-            logging.info(
-                f"Selecting facility type: {option.text_content()}"
-            )
-
-            option.click()
-
-        
-
-    # -----------------------------
-    # FACILITY NAME
-    # -----------------------------
-        
-
-            facility_name_input.click()
-            facility_name_input.fill(facility_name)
-
-            option = self.page.get_by_role(
-                "option",
-                name=facility_name,
-                exact=True
-            ).first
-
-            option.wait_for(state="visible")
-
-            logging.info(
-                f"Selecting facility name: {option.text_content()}"
-            )
-
-            option.click()
-
     def _fill_if_visible(self,selector, value):
         field = self.page.locator(selector)
         if field.count() > 0 and field.is_visible():
@@ -377,22 +285,14 @@ class ChildScreeningPage:
         disease_manager = DiseaseManager(page=self.page, synchronizer=self.synchronizer, count_manager=self.count_manager)
         final_detected_diseases = disease_manager.manage(child=self.child)
 
+        ## Call facility manager
+        facility_mapping_rule = FacilityMappingRule()
+        facility_manager = FacilityManager(page=self.page,mapping_rules=facility_mapping_rule,selected_mapping=self.selected_mapping,synchronizer=self.synchronizer)
+        facility_manager.manage(detected_diseases=final_detected_diseases)
+
         ## Fill latest values
         self._fill_final_health_values(result=result)
         result.final_diseases = [d.definition.name for d in final_detected_diseases]
-
-        ## We just need to check whether SAM is present or not?
-        self.is_to_select_nrc = any(d.definition.name == "SAM/Severe Thinness/SUW" for d in final_detected_diseases)
-        logging.info(f"Final detected disease for the child : {self.child.name} is : \n{final_detected_diseases}\n\nIs child: {self.child.name} sam : {self.is_to_select_nrc}")
-
-        
-
-        ## Select facility only when visible, it could not be visible if child is healthy
-        referral_checkbox = self.page.locator('#referSameInstitute')
-
-        if referral_checkbox.is_visible():
-            # logging.info(f"Calling Selecting facility for child: {self.child.name}, and to select nrc as : {self.is_to_select_nrc}, and is this child sam: {is_child_sam}")
-            self.select_facility(facility_type=self.child.facilityType,facility_name=self.child.facilityName,can_add_sam=self.is_to_select_nrc)
 
         finalSubmitBtn = self.page.get_by_role('button',name='Preview & Submit')
         # self.page.wait_for_timeout(5000)

@@ -313,6 +313,7 @@ def start_job_screeninhg(request:Request,job_id: Optional[str] = Form(None),uplo
         ## Save the file in persistant place
         jobManager = JobManager()
         jobManager.upload_file(job_id=job_id,uploaded_file=uploaded_file)
+        user_metadata = jobManager.get_user_metadata(job_id=job_id)
 
         ## Get uploaded file path
         job_metadata = JobManager.get_job_metadata(job_id=job_id)
@@ -327,7 +328,7 @@ def start_job_screeninhg(request:Request,job_id: Optional[str] = Form(None),uplo
         ## Create screening worker and pass the command for start screening
         workerFactory = WorkerFactory(application_services=services)
         screening_worker = workerFactory.create(job_id=job_id, worker_type=WorkerType.SCREENING_WORKER)
-        screening_worker.send(message=Message(job_id=job_id,command=Commands.START_SCREENING, payload={"institution_name":job_metadata.institution_data.institution_name, "institution_plan_id":job_metadata.institution_data.institution_plan_id, "institution_type": job_metadata.institution_data.institution_type, "planned_date": job_metadata.date, "uploaded_file_path": job_metadata.uploaded_file, "address": job_metadata.address, "mobile_number": job_metadata.mobile_number}))
+        screening_worker.send(message=Message(job_id=job_id,command=Commands.START_SCREENING, payload={"institution_name":job_metadata.institution_data.institution_name, "institution_plan_id":job_metadata.institution_data.institution_plan_id, "institution_type": job_metadata.institution_data.institution_type, "planned_date": job_metadata.date, "uploaded_file_path": job_metadata.uploaded_file, "address": job_metadata.address, "mobile_number": job_metadata.mobile_number,"selected_facility":user_metadata.selected_facility}))
         return {"status":"ok","job_id":job_id}
     except Exception as e:
         logging.exception(str(e))
