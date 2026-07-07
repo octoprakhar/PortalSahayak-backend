@@ -23,7 +23,7 @@ class DiseaseManipulator:
         """
         click on the checkbox whether it is defect at birth, deficiecy, childhood disease, or developemental detail
         """
-        category_mappers = {DiseaseCategory.DEFECTS_AT_BIRTH: "defects at birth", DiseaseCategory.DEFICIENCIES : "deficiencies", DiseaseCategory.DEVELOPMENTAL_DELAY: "development delay", DiseaseCategory.CHILDHOOD_DISEASES: "childhood diseases"}
+        category_mappers = {DiseaseCategory.DEFECTS_AT_BIRTH: "defects at birth", DiseaseCategory.DEFICIENCIES : "deficiencies", DiseaseCategory.DEVELOPMENTAL_DELAY: "development delay", DiseaseCategory.CHILDHOOD_DISEASES: "childhood diseases",DiseaseCategory.ADOLSCENT_HEALTH_CONCERNS: "adolescent health concerns"}
 
         category_button = self.page.get_by_role(
             "button",

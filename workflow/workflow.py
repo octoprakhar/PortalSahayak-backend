@@ -20,7 +20,7 @@ from services.ExistingChildScanner import ExistingChildScanner
 
 
 class ScreeningWorkflow:
-    def __init__(self, page:Page,report_creator: ReportCreator, selected_mapping: dict[str,str], logger:Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None ):
+    def __init__(self, page:Page,report_creator: ReportCreator, selected_mapping: dict[str,str], institution_type: str, logger:Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None ):
         self.page = page
         self.loader = ChildLoader()
         self.job_id = job_id
@@ -28,6 +28,7 @@ class ScreeningWorkflow:
         self.logger = logger
         self.synchronizer = synchronizer
         self.selected_mapping = selected_mapping
+        self.institution_type = institution_type
 
 
     def run(self, excel_path, defaultContactNum: str, address: str = ""):
@@ -42,10 +43,10 @@ class ScreeningWorkflow:
         for child in children:
             try:
                 
-                screening = ChildScreeningPage(page = self.page, child=child,job_id= self.job_id,synchronizer=self.synchronizer, count_manager=new_child_disease_manager,selected_mapping=self.selected_mapping)
+                screening = ChildScreeningPage(page = self.page, child=child,job_id= self.job_id,synchronizer=self.synchronizer, count_manager=new_child_disease_manager,selected_mapping=self.selected_mapping, institution_type=self.institution_type)
                 ## TODO check whether child is sam or not. Workflow will manage total sam count, internally classes will ask sam and set weight and height accordingly
 
-                searchStudent = SearchStudent(page=self.page, child=child)
+                searchStudent = SearchStudent(page=self.page, child=child, institution_type=self.institution_type)
                 existingStudent: SearchResult | None = searchStudent.search()
 
                 logging.info(f"For child: {child.name}. Search result is {existingStudent}")
@@ -99,7 +100,7 @@ class ScreeningWorkflow:
         existing_children_count_manager = DiseaseCountFactory().create(max_len=existing_children_without_data_numbers)
         logging.info(f"Got existing disease manager max as : {existing_children_count_manager.get_max_counts()}")
         try:
-            existingChildrenWithoutData = ExistingChildrenWithoutData(mobileNumber=defaultContactNum, page=self.page, address=address, job_id=self.job_id,synchronizer=self.synchronizer, count_manager=existing_children_count_manager,selected_mapping=self.selected_mapping)
+            existingChildrenWithoutData = ExistingChildrenWithoutData(mobileNumber=defaultContactNum, page=self.page, address=address, job_id=self.job_id,synchronizer=self.synchronizer, count_manager=existing_children_count_manager,selected_mapping=self.selected_mapping, institution_type=self.institution_type)
             non_data_existing_children_results = existingChildrenWithoutData.addExistingChildren()
             for child_result in non_data_existing_children_results:
                 if child_result.feedback.outcome is not FeedbackOutcome.SUCCESS:

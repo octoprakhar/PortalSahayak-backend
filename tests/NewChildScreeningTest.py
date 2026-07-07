@@ -15,13 +15,13 @@ logging.basicConfig(
 )
 
 child = Child(
-    name="Bhavya",
-    dob="21-05-2022",
+    name="lamine yamal",
+    dob="21-05-2017",
     fatherName="Lokesh",
     motherName="Lalita",
-    gender="Female",
-    weight="8",
-    height="60",
+    gender="Male",
+    weight="10.2",
+    height="95",
     mobileNumber="9999999999",
     headCircumference="40",
     facilityName="DEIC Balaghat (DEIC)",
@@ -30,8 +30,17 @@ child = Child(
     address="ABCD",
     diseaseName="Squint",
     visionLeft="6/6",
-    visionRight="6/6"
+    visionRight="6/6",
+    childClass=6,
+    bloodPressure="100/70"
 )
+
+selected_mapping = {
+        "District Level Facility": "DIST HOSPITAL BALAGHAT (District Level Facility)",
+        "Block Level Facility": "CHC LALBARRA (Block Level Facility)",
+        "NRC": "NRC DH BALAGHAT (NRC)",
+        "DEIC": "DEIC Balaghat (DEIC)"
+    }
 
 def logger(msg:str,logType: LogType) -> None:
     pass
@@ -44,6 +53,6 @@ with sync_playwright() as p:
     input("Login manually and press enter....")
     factory = DiseaseCountFactory()
     count_manager = factory.create(10)
-    screeningPage = ChildScreeningPage(page=page,child=child, count_manager=count_manager,job_id="ABC",logger=logger, synchronizer=PageSynchronizer())
+    screeningPage = ChildScreeningPage(page=page,child=child,institution_type="school", selected_mapping=selected_mapping, count_manager=count_manager,job_id="ABC",logger=logger, synchronizer=PageSynchronizer())
     screeningPage.submit()
     page.wait_for_timeout(5000)

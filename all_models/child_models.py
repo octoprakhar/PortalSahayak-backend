@@ -1,5 +1,5 @@
 class Child:
-    def __init__(self,name:str,dob:str,fatherName:str,motherName:str,mobileNumber:str, gender:str, address:str, height:str, weight:str, diseaseName:str=None, hb:str=None, headCircumference:str=None, facilityType:str=None, facilityName:str=None, visionLeft:str=None, visionRight:str=None):
+    def __init__(self,name:str,dob:str,fatherName:str,motherName:str,mobileNumber:str, gender:str, address:str, height:str, weight:str, diseaseName:str=None, hb:str=None, headCircumference:str=None, facilityType:str=None, facilityName:str=None, visionLeft:str=None, visionRight:str=None, childClass:int=None, bloodPressure: str=None):
         self.name = name
         self.dob = dob
         self.fatherName = fatherName
@@ -16,3 +16,5 @@ class Child:
         self.facilityName = facilityName
         self.visionLeft = visionLeft
         self.visionRight = visionRight
+        self.childClass = childClass
+        self.bloodPressure = bloodPressure

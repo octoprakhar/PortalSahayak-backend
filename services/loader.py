@@ -101,7 +101,9 @@ class ChildLoader:
             "facilityType", 
             "facilityName", # Added here to ensure fillna doesn't break later
             "address", 
-            "headCircumference"
+            "headCircumference",
+            "class",
+            "bloodPressure"
         ]
 
     
@@ -121,6 +123,8 @@ class ChildLoader:
         cleaned_df['facilityType'] = cleaned_df["facilityType"].fillna("").astype(str)
         cleaned_df['facilityName'] = cleaned_df["facilityName"].fillna("").astype(str)
         cleaned_df['address'] = cleaned_df["address"].fillna(address).astype(str)
+        cleaned_df['class'] = cleaned_df["class"].fillna(1).astype(int).astype(str)
+        cleaned_df['bloodPressure'] = cleaned_df["bloodPressure"].fillna("100/70").astype(str)
 
         return cleaned_df
     
@@ -214,7 +218,9 @@ class ChildLoader:
                 facilityType=str(row.get("facilityType")),
                 facilityName=str(row.get("facilityName")),
                 visionRight=str(row.get("visionRight")),
-                visionLeft=str(row.get("visionLeft"))
+                visionLeft=str(row.get("visionLeft")),
+                childClass=str(row.get("class")),
+                bloodPressure=str(row.get("bloodPressure"))
             )
             # logging.info(f"Created child like: {str(child)}")
 #             logging.info(

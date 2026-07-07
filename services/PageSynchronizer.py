@@ -69,6 +69,14 @@ class PageSynchronizer:
                 return el && el.value !== '0';
             }
             """)
+        
+    def wait_for_setting_blood_pressure(self,page:Page):
+        page.wait_for_function("""
+            () => {
+                const el = document.querySelector('select[name="bloodPressureClassification"]');
+                return el && el.value !== '0';
+            }
+            """)
     
     def wait_for_all_toast_disappear(
         self,

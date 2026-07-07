@@ -1,0 +1,85 @@
+[
+    {
+        "name": "Growing up concerns",
+        "code": "31",
+        "category": "ADOLSCENT_HEALTH_CONCERNS",
+        "questions": [
+            {
+                "code": "E1",
+                "text": "Do you always find it difficult to handle things in your life that has resulted from changes occurring in your body? (If Y, Refer)"
+            }
+        ]
+    },
+    {
+        "name": "Substance abuse",
+        "code": "32",
+        "category": "ADOLSCENT_HEALTH_CONCERNS",
+        "questions": [
+            {
+                "code": "E2",
+                "text": "Are you able to say \"NO\" and leave the place when your friends pressurize you to smoke or drink with them? (If N, Refer)"
+            }
+        ]
+    },
+    {
+        "name": "Feel depressed",
+        "code": "33",
+        "category": "ADOLSCENT_HEALTH_CONCERNS",
+        "questions": [
+            {
+                "code": "E3",
+                "text": "Do you feel unduly tired early in the morning or you feel depressed most of the time? (If Y, Refer)"
+            }
+        ]
+    },
+    {
+        "name": "Delay in menstruation cycles",
+        "code": "34",
+        "category": "ADOLSCENT_HEALTH_CONCERNS",
+        "questions": [
+            {
+                "code": "E4",
+                "text": "In case of females- Have your menstrual cycles started yet? (If not started by 16 years, Refer)"
+            }
+        ]
+    },
+    {
+        "name": "Irregular periods",
+        "code": "35",
+        "category": "ADOLSCENT_HEALTH_CONCERNS",
+        "questions": [
+            {
+                "code": "E5",
+                "text": "Do you have your periods every months (i.e.28 ± 7 days)? (If N, Refer)"
+            }
+        ]
+    },
+    {
+        "name": "Experience any pain or burning sensation while urinating",
+        "code": "36",
+        "category": "ADOLSCENT_HEALTH_CONCERNS",
+        "questions": [
+            {
+                "code": "E6",
+                "text": "Do you experience any pain or burning sensation while urinating? (If Y, Refer)"
+            }
+        ]
+    },
+    {
+        "name": "Discharge/foul smelling discharge from the genitor-urinary area",
+        "code": "37",
+        "category": "ADOLSCENT_HEALTH_CONCERNS",
+        "questions": []
+    },
+    {
+        "name": "Pain during menstruation",
+        "code": "38",
+        "category": "ADOLSCENT_HEALTH_CONCERNS",
+        "questions": [
+            {
+                "code": "E8",
+                "text": "Do you feel extreme pain during menstruation so much so that it stops you from doing routine activities/ attend schools? (If Y, Refer)"
+            }
+        ]
+    }
+]

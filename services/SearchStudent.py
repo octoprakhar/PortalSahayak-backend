@@ -5,9 +5,10 @@ from all_models.child_models import Child
 from all_models.SearchStudentModels import SearchResult, SearchedStudentCandidate
 
 class SearchStudent:
-    def __init__(self, page:Page, child:Child):
+    def __init__(self, page:Page, child:Child, institution_type: str):
         self.page = page
         self.child = child
+        self.institution_type = institution_type
 
     def _get_first_name(self)->str:
         """

@@ -10,3 +10,4 @@ class DiseaseCategory(Enum):
     CHILDHOOD_DISEASES = "C"
     DEVELOPMENTAL_DELAY = "D"
     OTHERS = "E"
+    ADOLSCENT_HEALTH_CONCERNS = "F"

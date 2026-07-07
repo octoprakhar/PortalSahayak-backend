@@ -12,6 +12,7 @@ from all_models.InstitutionData import InstitutionData
 from constants.log_type import LogType
 from services.PageSynchronizer import PageSynchronizer
 from services.ReportCreator import ReportCreator
+from constants.institution_type import InstitutionType
 
 
 class RunTimeManager:
@@ -155,14 +156,23 @@ class RunTimeManager:
 
             self.synchronizer.wait_loading(page=page)
             self.synchronizer.wait_for_all_toast_disappear(page=page)
-            print(page.get_by_text("Add New Student").count())
-            page.get_by_role(
-                "button",
-                name="Add New Child"
-            ).wait_for(
-                state="visible",
-                timeout=3000
+            # print(page.get_by_text("Add New Student").count())
+            button_name = (
+                "Add New Child"
+                if institution_data.institution_type == InstitutionType.AWC.value
+                else "Add New Student"
             )
+            print(f"Got institution Type as {institution_data.institution_type}")
+            buttons = page.get_by_role("button", name=button_name)
+            # Wait for at least one button to be visible
+            buttons.first.wait_for(state="visible", timeout=3000)
+
+            # Get the number of matching buttons
+            # button_count = buttons.count()
+
+            # print(f"Found {button_count} '{button_name}' button(s)")
+
+
             # re.compile(r"^Add New (Child|Student)$")
         except Exception as e:
             self.logger("Institution is not selected please select the institution", LogType.ERROR)
@@ -171,7 +181,7 @@ class RunTimeManager:
 
         ## Start Screening Workflow with all the data
         try:
-            screeningWorkFLow: ScreeningWorkflow = ScreeningWorkflow(page=page,job_id=self.job_id,synchronizer=self.synchronizer,report_creator=report_creator,selected_mapping=selected_mapping)
+            screeningWorkFLow: ScreeningWorkflow = ScreeningWorkflow(page=page,job_id=self.job_id,synchronizer=self.synchronizer,report_creator=report_creator,selected_mapping=selected_mapping, institution_type=institution_data.institution_type)
         
             screeningWorkFLow.run(uploaded_file_path,mobile_number,address)
             self.logger("Completed the JOB Succesfully 🎉🎉🎉🎉.",LogType.SUCCESS)

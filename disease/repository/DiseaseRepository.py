@@ -3,7 +3,10 @@ import json
 from disease.models.DiseaseDefinition import DiseaseDefinition,DiseaseQuestion
 from disease.models.DiseaseCategory import DiseaseCategory
 
-class DiseaseRepository:
+
+from disease.repository.DiseaseRepositoryAbstract import DiseaseRepositoryAbstract
+
+class DiseaseRepository(DiseaseRepositoryAbstract):
     def __init__(self):
         with open(
             "disease/data/all_diseases.json",

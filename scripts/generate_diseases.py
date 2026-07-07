@@ -8,10 +8,11 @@ CATEGORY_MAP = {
     "1": "DEFECTS_AT_BIRTH",
     "2": "DEFICIENCIES",
     "3": "CHILDHOOD_DISEASES",
-    "4": "DEVELOPMENTAL_DELAY"
+    "4": "DEVELOPMENTAL_DELAY",
+    "5": "ADOLSCENT_HEALTH_CONCERNS"
 }
 
-with open("raw_response.json", encoding="utf-8") as f:
+with open("adolscent_girl_disease_raw.json", encoding="utf-8") as f:
     response = json.load(f)
 
 all_diseases = []
@@ -42,7 +43,7 @@ for category in response["data"]:
             }
         )
 
-with open("disease/data/all_diseases.json", "w", encoding="utf-8") as f:
+with open("disease/data/adolscent_girls_diseases.json", "w", encoding="utf-8") as f:
     json.dump(
         all_diseases,
         f,

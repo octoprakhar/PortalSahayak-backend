@@ -1,0 +1,75 @@
+{
+    "succecced": true,
+    "message": "Records fetched successfully.",
+    "status_Code": null,
+    "errors": null,
+    "data": [
+        {
+            "dclasscode": "5",
+            "dclassname": "Adolescent Health concerns",
+            "Defects": [
+                {
+                    "dcode": "31",
+                    "dname": "Growing up concerns",
+                    "dclasscode": "5",
+                    "subQuestions": [
+                        {
+                            "subCode": "117",
+                            "checklist": "E1",
+                            "qname": "Do you always find it difficult to handle things in your life that has resulted from changes occurring in your body? (If Y, Refer)"
+                        }
+                    ]
+                },
+                {
+                    "dcode": "32",
+                    "dname": "Substance abuse",
+                    "dclasscode": "5",
+                    "subQuestions": [
+                        {
+                            "subCode": "118",
+                            "checklist": "E2",
+                            "qname": "Are you able to say \"NO\" and leave the place when your friends pressurize you to smoke or drink with them? (If N, Refer)"
+                        }
+                    ]
+                },
+                {
+                    "dcode": "33",
+                    "dname": "Feel depressed",
+                    "dclasscode": "5",
+                    "subQuestions": [
+                        {
+                            "subCode": "119",
+                            "checklist": "E3",
+                            "qname": "Do you feel unduly tired early in the morning or you feel depressed most of the time? (If Y, Refer)"
+                        }
+                    ]
+                },
+                {
+                    "dcode": "36",
+                    "dname": "Experience any pain or burning sensation while urinating",
+                    "dclasscode": "5",
+                    "subQuestions": [
+                        {
+                            "subCode": "122",
+                            "checklist": "E6",
+                            "qname": "Do you experience any pain or burning sensation while urinating? (If Y, Refer)"
+                        }
+                    ]
+                },
+                {
+                    "dcode": "37",
+                    "dname": "Discharge/foul smelling discharge from the genitor-urinary area",
+                    "dclasscode": "5",
+                    "subQuestions": [
+                        {
+                            "subCode": "0",
+                            "checklist": null,
+                            "qname": null
+                        }
+                    ]
+                }
+            ]
+        }
+
+    ]
+}

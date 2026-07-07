@@ -10,7 +10,7 @@ from disease.manipulator.DiseaseManipulator import DiseaseManipulator
 
 class ValueRemovalStrategy(DiseaseRemovalStrategy,ABC):
     def __init__(self):
-        self.MAX_ATTEMPTS = 50
+        self.MAX_ATTEMPTS = 500
     
     @abstractmethod
     def reach_limit(self,manipulator:DiseaseManipulator) -> bool:

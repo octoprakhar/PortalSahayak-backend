@@ -19,6 +19,7 @@ from disease.models.DiseaseDefinition import DiseaseDefinition
 from disease.models.DiseaseCategory import DiseaseCategory
 from disease.manipulator.DiseaseManipulator import DiseaseManipulator
 from disease.strategy.adding_strategies.DiseaseAdditionStrategy import DiseaseAdditionStrategy
+from disease.factory.DiseaseRepositoryFactory import DiseaseRepositoryFactory
 
 from services.PageSynchronizer import PageSynchronizer
 
@@ -36,8 +37,34 @@ class DiseaseManager:
         self.count_manager = count_manager
         self.disease_removal_repo = DiseaseRemovalStrategyRepository()
         self.disease_addition_repo = DiseaseAdditionStrategyRepository()
-        self.full_diseases_repo = DiseaseRepository()
+        self.disease_factory = DiseaseRepositoryFactory()
+        self.full_diseases_repo = None
         self.managed_disease_name = self.disease_rule_repo.get_managed_disease_names()
+
+    def log_bp(self,stage):
+        value = self.page.locator(
+            'select[name="bloodPressureClassification"]'
+        ).input_value()
+
+        logging.info(
+            f"[BP] {stage}: {value}"
+        )
+
+    def enable_network_logging(page:Page):
+
+        def log_response(response):
+            request = response.request
+
+            print("=" * 80)
+            print(request.method, response.status)
+            print(request.url)
+
+            try:
+                print("Payload:", request.post_data_json)
+            except Exception:
+                pass
+
+        page.on("response", log_response)
 
     def _select_user_given_disease(self,disease_name: str)-> None:
         """
@@ -67,6 +94,11 @@ class DiseaseManager:
         It manages all the diseases regarding a specific child
         """
 
+        self.log_bp("Starting manage() method: ")
+
+        ## Intitialize and get full disease repo
+        self.full_diseases_repo = self.disease_factory.get_disease_repo(child=child)
+
         # print("Disease Manager is called.")
 
         ## Create all disease context
@@ -82,11 +114,15 @@ class DiseaseManager:
         ## Because till now only the diseases through value changing is only been selected.
         logging.info(f"Is User given disease, which is : {child.diseaseName}. Is it seleted? {is_user_disease_selected}")
 
+        self.log_bp("Before selecting user given disease")
+
         if child.diseaseName.strip() and not is_user_disease_selected:
             try:
                 self._select_user_given_disease(disease_name=child.diseaseName)
             except:
                 logging.error('Error happened while selecting user disease')
+
+        self.log_bp("After selecting user given disease")
 
 
         ## After doing user's disease thing check again
@@ -97,6 +133,7 @@ class DiseaseManager:
             # print("====================================")
             # print("\n")
             for disease in detected_diseases:
+                self.log_bp(f"Before working with: {disease.definition.name}")
                 logging.info(f"Now started for checking of disease : {disease.definition.name}")
                 if disease.definition.name == child.diseaseName:
                     logging.info("This disease is given by the user")
@@ -135,6 +172,7 @@ class DiseaseManager:
                             raise Exception("Cannot remove this disease, so leaving")
             
                 # print("=========================================\n")
+                self.log_bp(f"After working with: {disease.definition.name} ")
         
         else:
             logging.info("Child is healthy")

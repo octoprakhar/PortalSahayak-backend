@@ -13,6 +13,7 @@ from all_models.ChildRunResult import ChildRunResult
 from constants.WorkflowStage import WorkflowStage
 from constants.log_type import LogType
 from constants.ChildType import ChildType
+from constants.institution_type import InstitutionType
 from all_models.JobLogs import JobLog
 from utils.loaderUtils import get_age,get_corrected_values
 from services.PageSynchronizer import PageSynchronizer
@@ -26,8 +27,9 @@ from disease.models.DetectedDisease import DetectedDisease
 from facility.manager.FacilityManager import FacilityManager
 from facility.rule.FacilityMappingRule import FacilityMappingRule
 
+
 class ChildScreeningPage:
-    def __init__(self, page:Page, child:Child, count_manager: DiseaseCountManager,selected_mapping: dict[str,str],logger: Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None):
+    def __init__(self, page:Page, child:Child, count_manager: DiseaseCountManager,selected_mapping: dict[str,str], institution_type: str, logger: Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None):
         self.page = page
         self.child = child
         self.job_id = job_id
@@ -36,6 +38,7 @@ class ChildScreeningPage:
         self.age = get_age(self.child.dob)
         self.synchronizer = synchronizer
         self.selected_mapping = selected_mapping
+        self.institution_type = institution_type
 
     
     def _fill_if_visible(self,selector, value):
@@ -47,6 +50,13 @@ class ChildScreeningPage:
         field = self.page.locator(selector)
         if field.count() > 0 and field.is_visible():
             field.select_option(label=str(value))
+
+    def _fill_bp_if_visible(self):
+        field = self.page.locator('[name="bloodPressureValue"]')
+        if field.count() > 0 and field.is_visible():
+            field.fill(str(self.child.bloodPressure))
+            field.press("Tab")  # Move focus away to trigger blur/change
+            self.synchronizer.wait_for_setting_blood_pressure(page=self.page)
 
     def _skip_child(self):
         """
@@ -173,7 +183,15 @@ class ChildScreeningPage:
     def insertPersonalDetails(self) -> FeedbackResult:
         ## We will take it from loaded excel his name, father's name, mother's name, DOB, address, mobile number
         ## Then perform this 
-        self.page.get_by_role('button',name="Add New Child").click()
+
+        button_name = (
+            "Add New Child"
+            if self.institution_type == InstitutionType.AWC.value
+            else "Add New Student"
+        )
+        # print(f"Got institution Type as {institution_data.institution_type}")
+        buttons = self.page.get_by_role("button", name=button_name)
+        buttons.first.click()
 
         ## IF target complete box appears 
         message = self.page.get_by_text(
@@ -209,6 +227,10 @@ class ChildScreeningPage:
         mobileNumberField.fill(self.child.mobileNumber)
         addressField.fill(self.child.address)
 
+        ## Selecting class if visible
+        # logging.info(f"Got child class as {self.child.childClass} and type is {type(self.child.childClass)}")
+        self._select_if_visible('select[name="className"]',f'Class {self.child.childClass}')
+
         ## Saving age as global variable
 
         if float(ageField.input_value()) < 1:
@@ -234,6 +256,7 @@ class ChildScreeningPage:
 
 
     def insertHealthReport(self,result: ChildRunResult) -> FeedbackResult:
+
         heightField = self.page.locator('[name="height"]')
         weightField = self.page.locator('[name="weight"]')
         hbField = self.page.locator('[name="hb"]')
@@ -275,15 +298,23 @@ class ChildScreeningPage:
 
         self._fill_if_visible('[name="headCircumference"]', self.child.headCircumference)
         self._fill_if_visible('[name="muac"]', "13")
+        # logging.info("filling bp")
+        # self._fill_bp_if_visible()
+        # logging.info("selected bp")
+        # self.page.wait_for_timeout(5000)
 
         self._select_if_visible('select[name="visionLeft"]', self.child.visionLeft)
         self._select_if_visible('select[name="visionRight"]', self.child.visionRight)
 
-        self.page.wait_for_timeout(1000)
+        # self.page.wait_for_timeout(5000)
 
         ## Calling disease manager for final check
         disease_manager = DiseaseManager(page=self.page, synchronizer=self.synchronizer, count_manager=self.count_manager)
         final_detected_diseases = disease_manager.manage(child=self.child)
+        # print(f"Got classfication of bp after final disease from disease manager is filled as : {bp_classification.input_value()}")
+
+        ## Now filling the derived values like BP
+        self._fill_bp_if_visible()
 
         ## Call facility manager
         facility_mapping_rule = FacilityMappingRule()
@@ -487,7 +518,7 @@ class ChildScreeningPage:
 
         ## If child is above 6years and It is awc don't enter here
         childRunResult = ChildRunResult(child=self.child,stage=WorkflowStage.PERSONAL_DETAILS,child_type=ChildType.NEW_CHILD)
-        if self.age > 6:
+        if self.age > 6 and self.institution_type == InstitutionType.AWC.value:
             logging.info(f"📢📢 Got child of name: {self.child.name} has age greater than 6 and we are doing AWC so leaving.")
             feedback = FeedbackResult(outcome=FeedbackOutcome.INVALID_DATA, message=f"Got child of name: {self.child.name} has age greater than 6 and we are doing AWC so leaving.")
             childRunResult.feedback = feedback
@@ -510,6 +541,7 @@ class ChildScreeningPage:
             healthReportFeedbackResult = self.insertHealthReport(result=childRunResult)
             self._log_feedback(healthReportFeedbackResult)
             if healthReportFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
+                self.page.wait_for_timeout(30000)
                 self._skip_child()
                 childRunResult.feedback = healthReportFeedbackResult
                 return childRunResult
