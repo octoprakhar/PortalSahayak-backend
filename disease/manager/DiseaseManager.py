@@ -20,8 +20,11 @@ from disease.models.DiseaseCategory import DiseaseCategory
 from disease.manipulator.DiseaseManipulator import DiseaseManipulator
 from disease.strategy.adding_strategies.DiseaseAdditionStrategy import DiseaseAdditionStrategy
 from disease.factory.DiseaseRepositoryFactory import DiseaseRepositoryFactory
+from disease.repository.DiseaseVariantRegistry import DiseaseVariantRegistry
 
 from services.PageSynchronizer import PageSynchronizer
+
+from utils.loaderUtils import get_age
 
 class DiseaseManager:
     """
@@ -37,34 +40,11 @@ class DiseaseManager:
         self.count_manager = count_manager
         self.disease_removal_repo = DiseaseRemovalStrategyRepository()
         self.disease_addition_repo = DiseaseAdditionStrategyRepository()
+        self.disease_variant_registry = DiseaseVariantRegistry()
         self.disease_factory = DiseaseRepositoryFactory()
         self.full_diseases_repo = None
         self.managed_disease_name = self.disease_rule_repo.get_managed_disease_names()
 
-    def log_bp(self,stage):
-        value = self.page.locator(
-            'select[name="bloodPressureClassification"]'
-        ).input_value()
-
-        logging.info(
-            f"[BP] {stage}: {value}"
-        )
-
-    def enable_network_logging(page:Page):
-
-        def log_response(response):
-            request = response.request
-
-            print("=" * 80)
-            print(request.method, response.status)
-            print(request.url)
-
-            try:
-                print("Payload:", request.post_data_json)
-            except Exception:
-                pass
-
-        page.on("response", log_response)
 
     def _select_user_given_disease(self,disease_name: str)-> None:
         """
@@ -89,12 +69,12 @@ class DiseaseManager:
 
 
 
-    def manage(self, child:Child) -> list[DetectedDisease]:
+    def manage(self, child:Child, institution_type: str) -> list[DetectedDisease]:
         """
         It manages all the diseases regarding a specific child
         """
 
-        self.log_bp("Starting manage() method: ")
+        # self.log_bp("Starting manage() method: ")
 
         ## Intitialize and get full disease repo
         self.full_diseases_repo = self.disease_factory.get_disease_repo(child=child)
@@ -102,7 +82,7 @@ class DiseaseManager:
         # print("Disease Manager is called.")
 
         ## Create all disease context
-        disease_context = DiseaseContext(child=child,current_counts=self.count_manager.get_current_counts(),max_counts=self.count_manager.get_max_counts())
+        disease_context = DiseaseContext(child=child,current_counts=self.count_manager.get_current_counts(),max_counts=self.count_manager.get_max_counts(), institution_type=institution_type)
         # print(f"Made the context for the child as: \n{disease_context}")
         # print("\n")
         ## 1. Detect all diseases
@@ -114,15 +94,18 @@ class DiseaseManager:
         ## Because till now only the diseases through value changing is only been selected.
         logging.info(f"Is User given disease, which is : {child.diseaseName}. Is it seleted? {is_user_disease_selected}")
 
-        self.log_bp("Before selecting user given disease")
+        # self.log_bp("Before selecting user given disease")
 
         if child.diseaseName.strip() and not is_user_disease_selected:
+            ## Remember user has given us the concept, we need real valid disease too from the portal
+            valid_variant = self.disease_variant_registry.get_correct_variant(disease_name=child.diseaseName,curr_age=get_age(child.dob))
+            logging.info(f"for user disease: {child.diseaseName}, got variant as {valid_variant}")
             try:
-                self._select_user_given_disease(disease_name=child.diseaseName)
+                self._select_user_given_disease(disease_name=valid_variant)
             except:
                 logging.error('Error happened while selecting user disease')
 
-        self.log_bp("After selecting user given disease")
+        # self.log_bp("After selecting user given disease")
 
 
         ## After doing user's disease thing check again
@@ -133,7 +116,7 @@ class DiseaseManager:
             # print("====================================")
             # print("\n")
             for disease in detected_diseases:
-                self.log_bp(f"Before working with: {disease.definition.name}")
+                # self.log_bp(f"Before working with: {disease.definition.name}")
                 logging.info(f"Now started for checking of disease : {disease.definition.name}")
                 if disease.definition.name == child.diseaseName:
                     logging.info("This disease is given by the user")
@@ -172,7 +155,7 @@ class DiseaseManager:
                             raise Exception("Cannot remove this disease, so leaving")
             
                 # print("=========================================\n")
-                self.log_bp(f"After working with: {disease.definition.name} ")
+                # self.log_bp(f"After working with: {disease.definition.name} ")
         
         else:
             logging.info("Child is healthy")
@@ -189,8 +172,10 @@ class DiseaseManager:
             print(f"Got final diseases as: {final_diseases}")
             for disease in final_diseases:
                 if disease.definition.name in self.managed_disease_name:
+                    ## Get the root concept of the disease
+                    disease_concept = self.disease_variant_registry.get_disease_concept(disease_name=disease.definition.name)
                     ## Update the count
-                    self.count_manager.increment(disease.definition.name)
+                    self.count_manager.increment(disease_concept)
 
         
             return final_diseases
@@ -249,8 +234,10 @@ class DiseaseManager:
         # print(f"Got final diseases as: {final_diseases}")
         for disease in final_diseases:
             if disease.definition.name in self.managed_disease_name:
+                ## Get the root concept of the disease
+                disease_concept = self.disease_variant_registry.get_disease_concept(disease_name=disease.definition.name)
                 ## Update the count
-                self.count_manager.increment(disease.definition.name)
+                self.count_manager.increment(disease_concept)
 
         
         return final_diseases

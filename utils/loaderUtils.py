@@ -188,11 +188,90 @@ def get_corrected_values(age_years):
             round(random.uniform(95, 105), 1)
         )
 
-    else:
+    elif age_years < 6:
         return (
             round(random.uniform(14, 16), 1),
             round(random.uniform(100, 110), 1)
         )
+    
+    elif age_years < 7:
+        return (
+            round(random.uniform(17, 21), 1),
+            round(random.uniform(110, 125), 1)
+        )
+    
+    elif age_years < 8:
+        return (
+            round(random.uniform(22,30), 1),
+            round(random.uniform(125, 135), 1)
+        )
+    
+    elif age_years < 9:
+        return (
+            round(random.uniform(30, 40), 1),
+            round(random.uniform(140, 150), 1)
+        )
+    
+    elif age_years < 10:
+        return (
+            round(random.uniform(35,40), 1),
+            round(random.uniform(140, 150), 1)
+        )
+    
+    elif age_years < 11:
+        return (
+            round(random.uniform(35, 40), 1),
+            round(random.uniform(140, 150), 1)
+        )
+    
+    elif age_years < 12:
+        return (
+            round(random.uniform(35, 40), 1),
+            round(random.uniform(140, 150), 1)
+        )
+    
+    elif age_years < 13: 
+        return (
+            round(random.uniform(35, 45), 1),
+            round(random.uniform(145, 155), 1)
+        )
+    
+    elif age_years < 14:
+        return (
+            round(random.uniform(35, 50), 1),
+            round(random.uniform(145, 160), 1)
+        )
+    
+    elif age_years < 15:
+        return (
+            round(random.uniform(45, 55), 1),
+            round(random.uniform(155, 165), 1)
+        )
+    
+    elif age_years < 16:
+        return (
+            round(random.uniform(45, 55), 1),
+            round(random.uniform(155, 165), 1)
+        )
+    
+    elif age_years < 17:
+        return (
+            round(random.uniform(45, 60), 1),
+            round(random.uniform(155, 170), 1)
+        )
+    
+    elif age_years < 18:
+        return (
+            round(random.uniform(50, 60), 1),
+            round(random.uniform(160, 170), 1)
+        )
+    
+    else:
+        return (
+            round(random.uniform(50, 60), 1),
+            round(random.uniform(160, 170), 1)
+        )
+
 
 
 

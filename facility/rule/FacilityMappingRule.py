@@ -7,7 +7,7 @@ class FacilityMappingRule:
     """
 
     def get_facility_type_for_disease(self,disease:DetectedDisease) -> FacilityType:
-        target_diseases = ["Severe Stunting", "Mild Anaemia", "Moderate Anaemia", "Skin Conditions", "Dental Conditions"]
+        target_diseases = ["Severe Stunting", "Mild Anaemia", "Moderate Anaemia", "Skin Conditions", "Dental Conditions", "Skin Condtions Not Leprosy"]
         if disease.definition.name == "SAM/Severe Thinness/SUW":
             return FacilityType.NRC
         if disease.definition.name in target_diseases:

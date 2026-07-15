@@ -4,5 +4,6 @@ from all_models.child_models import Child
 @dataclass
 class DiseaseContext:
     child: Child
+    institution_type: str
     current_counts: dict[str,int]
     max_counts: dict[str,int]

@@ -18,6 +18,7 @@ class Events(Enum):
     9. USER_AUTHENTICATION_FAILED: Credentials given by user is wrong
     10. FACILITY_CATALOG_FETCHED: Facility related to a user is fetched and catalog is ready.
     11. FETCHING_FACILITY_FAILED: Error occured while fetching the facility
+    12. FETCHING_USER_CREDENTIALS_FAILED : Error while getting session's data like accessToken etc
 
     NOTE: For v1, JOB_CREATED,LOGIN_COMPLETED,INSTITUTION_FETCHED: is considered the state with api call to 'create-job', and the 'REPORT_CREATED'
     will be for api request 'start-screening'.
@@ -33,3 +34,4 @@ class Events(Enum):
     LOG_MESSAGE="log_message"
     FACILITY_CATALOG_FETCHED = "facility_catalog_fetched"
     FETCHING_FACILITY_FAILED = "fetching_facility_failed"
+    FETCHING_USER_CREDENTIALS_FAILED = "fetching_user_credentials_failed"

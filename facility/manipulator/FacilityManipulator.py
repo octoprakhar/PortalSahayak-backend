@@ -3,6 +3,7 @@ import logging
 
 from facility.model.ReferralDecision import ReferralDecision
 from services.PageSynchronizer import PageSynchronizer
+from facility.constants.FacilityLoadResult import FacilityLoadResult
 
 class FacilityManipulator:
     """
@@ -83,19 +84,9 @@ class FacilityManipulator:
         # Wait for dropdown to appear and click the option
         option = self.page.get_by_role("option", name=facility_type, exact=True)
         option.wait_for(state="visible")
-        with self.page.expect_response(
-            lambda r: (
-                "Hierarchy_Master/Get_HierarchyMaster" in r.url
-                and r.request.method == "POST"
-                and (r.request.post_data_json or {}).get("masterType") == 11
-            ),
-            timeout=30000,
-        ) as response_info:
-
-            option.click()          
-
-        response = response_info.value
-        return response.json()
+        # option.click()
+        result = self.synchronizer.click_and_wait_for_facility_reload(option=option, page=self.page)
+        
 
     def _select_facility_name(self,disease_row: Locator, facility_name: str, facility_name_col_idx: int):
         # Get the Facility Name cell in this row
@@ -158,10 +149,7 @@ class FacilityManipulator:
         
 
         ## Step 3.5, wait for facility name to reload
-        response = self._select_facility_type(disease_row=disease_row,facility_type=referral_decision.facility_type,facility_type_col_idx=facility_type_col_index)
-        # logging.info(f"Got response for disease: {referral_decision.disease_name} as: \n{response}")
-        if not response.get("data"):
-            raise RuntimeError("There is no facility name for this facility type")
+        self._select_facility_type(disease_row=disease_row,facility_type=referral_decision.facility_type,facility_type_col_idx=facility_type_col_index)
 
         ## Step 4 => select facility name
         self._select_facility_name(disease_row=disease_row,facility_name_col_idx=facility_name_col_index,facility_name=referral_decision.facility_name)

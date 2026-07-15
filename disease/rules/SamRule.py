@@ -1,5 +1,7 @@
 from disease.rules.DiseaseRule import DiseaseRule
 
+from utils.loaderUtils import get_age
+
 class SamRule(DiseaseRule):
     """
     This will validate whether this child can have sam or not
@@ -16,4 +18,4 @@ class SamRule(DiseaseRule):
 
         is_current_count_less = current_count < max_count
 
-        return not child_disease.strip() and is_current_count_less
+        return not child_disease.strip() and is_current_count_less and context.institution_type != "school"

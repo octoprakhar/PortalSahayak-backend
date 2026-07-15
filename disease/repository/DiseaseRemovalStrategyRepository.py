@@ -8,6 +8,8 @@ from disease.strategy.removal_strategies.value_removal.SevereStuntingRemovalStra
 from disease.strategy.removal_strategies.value_removal.MicrocephelyRemovalStrategy import MicrocephelyRemovalStrategy
 from disease.strategy.removal_strategies.value_removal.MacrocephelyRemovalStrategy import MacrocephelyRemovalStrategy
 from disease.strategy.removal_strategies.value_removal.AnaemiaRemovalStrategy import AnaemiaRemovalStrategy
+from disease.strategy.removal_strategies.value_removal.ObesityRemovalStrategy import ObesityRemovalStrategy
+from disease.strategy.removal_strategies.value_removal.PrehypertensionRemovalStrategy import PrehypertensionRemovalStrategy
 
 from services.PageSynchronizer import PageSynchronizer
 
@@ -36,7 +38,10 @@ class DiseaseRemovalStrategyRepository:
                 lambda: AnaemiaRemovalStrategy(),
             "Mild Anaemia":
                 lambda: AnaemiaRemovalStrategy(),
-
+            "Obesity":
+                lambda: ObesityRemovalStrategy(),
+            "Prehypertension":
+                lambda: PrehypertensionRemovalStrategy(),
             "DEFAULT":
                 lambda: NoRemovalStrategy()
         }

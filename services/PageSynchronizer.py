@@ -1,4 +1,9 @@
-from playwright.sync_api import Page,Locator
+from playwright.sync_api import Page,Locator,TimeoutError
+from threading import Event
+import logging
+
+from facility.constants.FacilityLoadResult import FacilityLoadResult
+
 
 class PageSynchronizer:
     """
@@ -103,27 +108,58 @@ class PageSynchronizer:
         except TimeoutError:
             raise Exception("Toast notification(s) did not disappear.")
         
-    def wait_for_facility_names_loaded(self, page: Page):
-        """
-        Wait for Hierarchy_Master/Get_HierarchyMaster(masterType=11)
-        and return the response JSON.
-        """
+    def click_and_wait_for_facility_reload(
+        self,
+        option: Locator,
+        page: Page,
+        cache_check_timeout_ms: int = 1000,
+        response_timeout_ms: int = 10000,
+    ):
 
-        response = page.wait_for_response(
-            lambda r: (
-                "Hierarchy_Master/Get_HierarchyMaster" in r.url
-                and r.request.method == "POST"
-                and (
-                    r.request.post_data_json or {}
-                ).get("masterType") == 11
-            ),
-            timeout=30000,
-        )
+        request_happened = Event()
 
-        if response.status != 200:
-            raise RuntimeError(
-                f"HierarchyMaster request failed "
-                f"({response.status})"
+        def on_request(req):
+            if (
+                "Hierarchy_Master/Get_HierarchyMaster" in req.url
+                and req.method == "POST"
+                and (req.post_data_json or {}).get("masterType") == 11
+            ):
+                request_happened.set()
+
+        page.on("request", on_request)
+
+        try:
+            with page.expect_response(
+                lambda r: (
+                    "Hierarchy_Master/Get_HierarchyMaster" in r.url
+                    and r.request.method == "POST"
+                    and (r.request.post_data_json or {}).get("masterType") == 11
+                ),
+                timeout=response_timeout_ms,
+            ) as response_info:
+
+                option.click()
+
+                # Allow cache case to reveal itself
+                if not request_happened.wait(cache_check_timeout_ms / 1000):
+                    return FacilityLoadResult.CACHE
+
+            response = response_info.value
+
+        except TimeoutError:
+            if not request_happened.is_set():
+                return FacilityLoadResult.CACHE
+
+            raise TimeoutError(
+                "Facility request was sent but response did not arrive."
             )
 
-        return response.json()
+        finally:
+            page.remove_listener("request", on_request)
+
+        body = response.json()
+
+        if not body.get("data"):
+            return FacilityLoadResult.EMPTY
+
+        return FacilityLoadResult.SERVER

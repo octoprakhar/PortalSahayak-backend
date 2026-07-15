@@ -78,6 +78,7 @@ class ChildFactory:
             facilityType=facilityType,
             facilityName=facilityName,
             visionLeft="6/6",
-            visionRight="6/6"
+            visionRight="6/6",
+            bloodPressure="100/70"
 
         )

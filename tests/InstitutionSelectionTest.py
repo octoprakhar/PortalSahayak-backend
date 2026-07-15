@@ -61,7 +61,7 @@ with sync_playwright() as p:
     print(required_institutions)
     page.wait_for_timeout(3000)
     
-    required_institution = InstitutionData(institution_plan_id=162768,institution_name="KOPE-1",planned_date="2026-06-19T00:00:00.000Z",institution_type=InstitutionType.AWC)
+    required_institution = InstitutionData(institution_plan_id=177958,institution_name="MS BAGHOLI",planned_date="2026-07-02T00:00:00.000Z",institution_type=InstitutionType.SCHOOL)
     print("starting selecting the institution")
-    institutionSelection.select_institution(institution_data=required_institution, is_ANM_present=True)
+    institutionSelection.select_institution(institution_data=required_institution, is_ANM_present=False)
     page.wait_for_timeout(5000)

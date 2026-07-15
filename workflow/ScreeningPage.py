@@ -53,8 +53,12 @@ class ChildScreeningPage:
 
     def _fill_bp_if_visible(self):
         field = self.page.locator('[name="bloodPressureValue"]')
-        if field.count() > 0 and field.is_visible():
+        if field.count() > 0 and field.is_visible() and self.institution_type == "school":
             field.fill(str(self.child.bloodPressure))
+            field.press("Tab")  # Move focus away to trigger blur/change
+            self.synchronizer.wait_for_setting_blood_pressure(page=self.page)
+        elif field.count() > 0 and field.is_visible() and self.institution_type == "awc":
+            field.fill("90/60")
             field.press("Tab")  # Move focus away to trigger blur/change
             self.synchronizer.wait_for_setting_blood_pressure(page=self.page)
 
@@ -310,7 +314,7 @@ class ChildScreeningPage:
 
         ## Calling disease manager for final check
         disease_manager = DiseaseManager(page=self.page, synchronizer=self.synchronizer, count_manager=self.count_manager)
-        final_detected_diseases = disease_manager.manage(child=self.child)
+        final_detected_diseases = disease_manager.manage(child=self.child, institution_type=self.institution_type)
         # print(f"Got classfication of bp after final disease from disease manager is filled as : {bp_classification.input_value()}")
 
         ## Now filling the derived values like BP
@@ -486,9 +490,14 @@ class ChildScreeningPage:
 
         self.synchronizer.wait_loading(page=self.page)
         # self.page.wait_for_timeout(1500)
+        button_name = (
+            "+ Add New Child"
+            if self.institution_type == InstitutionType.AWC.value
+            else "+ Add New Student"
+        )
         portalFeedback = PortalFeedbackDetector(self.page, success_msg="Sucessfully saved existing child's detail")
         current_page_locator = self.page.get_by_role("heading", name="Screening Preview")
-        next_page_locator = self.page.get_by_role("button", name="+ Add New Child")
+        next_page_locator = self.page.get_by_role("button", name=button_name)
         next_page_locator.wait_for(state="visible",timeout=1500)
         finalFeedbackResult: FeedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
         self._log_feedback(finalFeedbackResult)
@@ -553,9 +562,14 @@ class ChildScreeningPage:
             confirmClickBtn.click()
             self.synchronizer.wait_loading(page=self.page)
             # self.page.wait_for_timeout(1500)
+            button_name = (
+                "+ Add New Child"
+                if self.institution_type == InstitutionType.AWC.value
+                else "+ Add New Student"
+            )
             portalFeedback = PortalFeedbackDetector(self.page, success_msg="Child finally saved succesfully.")
             current_page_locator = self.page.get_by_role("heading", name="Screening Preview")
-            next_page_locator = self.page.get_by_role("button", name="+ Add New Child")
+            next_page_locator = self.page.get_by_role("button", name=button_name)
             next_page_locator.wait_for(state="visible",timeout=1500)
             finalFeedbackResult: FeedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
             self._log_feedback(finalFeedbackResult)
@@ -567,7 +581,7 @@ class ChildScreeningPage:
             return childRunResult
 
         except Exception as e:
-            logging.error(f"Can't save this child saving it to unsaved child with error message and moving to next: {e}")
+            logging.exception("Can't save this child saving it to unsaved child with error message and moving to next:")
             ## TODO save this non-saved child to our unsaved excel file
             self._skip_child()
             childRunResult.feedback = FeedbackResult(outcome=FeedbackOutcome.SYSTEM_ERROR, message="Internal Error happened. Moving to next child")

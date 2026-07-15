@@ -73,7 +73,8 @@ class ExistingChildScanner:
         if self.is_awc_screening:
             return years < 6
 
-        return True
+        else:
+            return years < 19
 
 
     def _is_start_screening_button_present(self, table_row: Locator, target_col_idx : int) -> bool:

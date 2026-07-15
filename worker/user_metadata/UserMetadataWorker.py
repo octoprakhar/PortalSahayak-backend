@@ -6,6 +6,7 @@ from constants.WorkerState import WorkerState
 
 from constants.Commands import Commands
 from all_models.UserRegistrationMetadata import UserRegistrationMetadata
+from all_models.PortalCredentials import PortalCredentials
 from services.RuntimeManager import RunTimeManager
 from constants.Events import Events
 
@@ -21,6 +22,16 @@ class UserMetadataWorker(WorkerAbstract):
         self.browswer_context: BrowserContext = None
         self.playwright: Playwright = None
 
+    def _get_cookie_value(self, name: str) -> str | None:
+        return next(
+            (
+                cookie["value"]
+                for cookie in self.browswer_context.cookies()
+                if cookie["name"] == name
+            ),
+            None,
+        )
+
     def _handle_get_user_metadata(self,message:Message):
         runtimeManager = RunTimeManager(job_id=self.job_id, logger=self.log)
 
@@ -28,7 +39,7 @@ class UserMetadataWorker(WorkerAbstract):
 
         self.page = runtime_job.page
         self.browser = runtime_job.browser
-        self.context = runtime_job.context
+        self.browswer_context = runtime_job.context
         self.playwright = runtime_job.playwright
         
 
@@ -40,9 +51,20 @@ class UserMetadataWorker(WorkerAbstract):
         if result["status_Code"] == '401' or result['status_Code'] == '423':
             self._emit_event(event=Events.USER_AUTHENTICATION_FAILED)
             return
+        
+        # print("calling to get access tokens")
+        access_token = self._get_cookie_value(name="accessToken")
+        # print(f"Got access Token as: {access_token}")
+        if not access_token:
+            self._emit_event(event=Events.FETCHING_USER_CREDENTIALS_FAILED)
+            return
+        
+        portalCredentials = PortalCredentials(acecss_token=access_token)
+        # print(f"Made portal credentials as : {portalCredentials}")
+
         user = result["data"]["user"]
         registrationMetadata = UserRegistrationMetadata(user_name=user["userName"],district_id=user["district_ID"], health_block_id=user["healthBlock_ID"],state_id=user["state_ID"],mht_code=user["mhT_Code"])
-        self._emit_event(event=Events.REGISTRATION_METADATA_FETCHED, payload={"registrationMetadata":registrationMetadata})
+        self._emit_event(event=Events.REGISTRATION_METADATA_FETCHED, payload={"registrationMetadata":registrationMetadata, "portalCredentials": portalCredentials})
                 
 
     def _process_command(self, message:Message):
@@ -57,8 +79,8 @@ class UserMetadataWorker(WorkerAbstract):
 
         if self.page:
             self.page.close()
-        if self.context:
-            self.context.close()
+        if self.browswer_context:
+            self.browswer_context.close()
         if self.browser:
             self.browser.close()
         if self.playwright:

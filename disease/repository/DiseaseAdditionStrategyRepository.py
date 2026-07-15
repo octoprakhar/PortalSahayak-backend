@@ -4,6 +4,7 @@ from disease.strategy.adding_strategies.value_adding.SevereStuntingAddingStrateg
 from disease.strategy.adding_strategies.value_adding.MildAnaemiaAddingStrategy import MildAnaemiaAddingStrategy
 from disease.strategy.adding_strategies.value_adding.ModerateAnaemiaAddingStrategy import ModerateAnaemiaAddingStrategy
 from disease.strategy.adding_strategies.DiseaseAdditionStrategy import DiseaseAdditionStrategy
+from disease.strategy.adding_strategies.checkbox_adding.SkinDiseaseNotLeprosyAdditionStrategy import SkinDiseaseNotLeprosyAdditionStrategy
 
 
 class DiseaseAdditionStrategyRepository:
@@ -23,6 +24,8 @@ class DiseaseAdditionStrategyRepository:
                 lambda: ModerateAnaemiaAddingStrategy(),
             "Mild Anaemia":
                 lambda: MildAnaemiaAddingStrategy(),
+            "Skin Condtions Not Leprosy":
+                lambda: SkinDiseaseNotLeprosyAdditionStrategy()
         }
         
     def get_strategy_by_disease_name(self, disease_name) -> DiseaseAdditionStrategy | None:

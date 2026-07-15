@@ -52,7 +52,7 @@ with sync_playwright() as p:
     page.goto("https://rbsk.mohfw.gov.in/RBSK/login")
     input("Login manually and press enter....")
     factory = DiseaseCountFactory()
-    count_manager = factory.create(10)
+    count_manager = factory.create(1)
     screeningPage = ChildScreeningPage(page=page,child=child,institution_type="school", selected_mapping=selected_mapping, count_manager=count_manager,job_id="ABC",logger=logger, synchronizer=PageSynchronizer())
     screeningPage.submit()
     page.wait_for_timeout(5000)

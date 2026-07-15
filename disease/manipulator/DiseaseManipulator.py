@@ -281,5 +281,17 @@ class DiseaseManipulator:
             return float(hb)
         except:
             return None
+        
+    def get_bp(self)->str | None:
+        bp = self.page.locator('input[name="bloodPressureValue"]').input_value()
+        try:
+            return str(bp)
+        except:
+            return None
+        
+    def remove_bp(self):
+        bp_input = self.page.locator('input[name="bloodPressureValue"]')
+        bp_input.fill("")
+
     
         

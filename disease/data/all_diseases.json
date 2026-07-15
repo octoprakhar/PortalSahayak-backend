@@ -238,6 +238,17 @@
         ]
     },
     {
+        "name": "Skin Condtions Not Leprosy",
+        "code": "150",
+        "category": "CHILDHOOD_DISEASES",
+        "questions": [
+            {
+                "code": "C4",
+                "text": "Skin Condition other than leprosy - Does the child have skin lesion: a) itching (esp. at night); b) scaly lesion; c) painfull to touch; d) changing periodically with season; e) preceded by trauma or infection?. Look esp. for round or oval lesion with scales or pustules in fingure webs."
+            }
+        ]
+    },
+    {
         "name": "Otitis Media",
         "code": "16",
         "category": "CHILDHOOD_DISEASES",

@@ -95,7 +95,7 @@ class ScreeningWorkflow:
         
         ## Let's enter the existing child, that are not present in dataset given
         logging.info("📢📢📢📢📢📢📢📢📢📢 Starting with Existing children📢📢📢📢📢📢📢📢📢📢📢📢📢📢📢📢")
-        existing_children_without_data_numbers = ExistingChildScanner(page=self.page).get_total_existing_student()
+        existing_children_without_data_numbers = ExistingChildScanner(page=self.page, is_awc_screening= self.institution_type == "awc").get_total_existing_student()
 
         existing_children_count_manager = DiseaseCountFactory().create(max_len=existing_children_without_data_numbers)
         logging.info(f"Got existing disease manager max as : {existing_children_count_manager.get_max_counts()}")

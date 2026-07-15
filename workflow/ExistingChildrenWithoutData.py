@@ -15,6 +15,8 @@ from all_models.ChildRunResult import ChildRunResult
 from constants.WorkflowStage import WorkflowStage
 from constants.ChildType import ChildType
 
+from constants.institution_type import InstitutionType
+
 class ExistingChildrenWithoutData:
     def __init__(self, mobileNumber:str, page:Page,address:str, count_manager: DiseaseCountManager, selected_mapping: dict[str,str],institution_type: str, job_id: str = None, synchronizer : PageSynchronizer = None):
         self.mobileNumber = mobileNumber
@@ -151,7 +153,7 @@ class ExistingChildrenWithoutData:
         for child in existingChildrenList:
             logging.info(f"Checking eligibility of {child.name} with age {get_age(child.dob)}, and start screeining as {child.isStartScreeningButtonPresent}")
             age = get_age(child.dob)
-            if age < 6 and child.isStartScreeningButtonPresent:
+            if (age < 6 and child.isStartScreeningButtonPresent and self.institution_type == InstitutionType.AWC.value) or (age < 19 and child.isStartScreeningButtonPresent and self.institution_type == InstitutionType.SCHOOL.value):
                 eligibleChildren.append(child)
 
         
