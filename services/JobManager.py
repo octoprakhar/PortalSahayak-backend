@@ -22,6 +22,7 @@ from all_models.InstitutionData import InstitutionData
 from all_models.UserRegistrationMetadata import UserRegistrationMetadata
 from all_models.FacilityCatalog import FacilityCatalog
 
+from utils.persistantUtils import to_report_row
 
 
 class JobManager:
@@ -490,6 +491,8 @@ class JobManager:
             raise RuntimeError(
                 f"Month field missing in metadata for job {job_id}"
             ) from e
+        
+    
     
     @staticmethod
     def save_success_and_failure_files(job_id:str,success_rows: list[ChildRunResult], failure_rows : list[ChildRunResult])-> tuple[str,str]:
@@ -512,7 +515,7 @@ class JobManager:
                 file_path.touch(exist_ok=True)
                 return
 
-            row_dicts = [asdict(row) for row in rows]
+            row_dicts = [to_report_row(row) for row in rows]
 
             with open(file_path, "w", newline="", encoding="utf-8") as f:
                 writer = csv.DictWriter(
