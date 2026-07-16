@@ -101,14 +101,14 @@ class JobManager:
             
             json.dump(asdict(userMetadata), f, indent=2,default=JobManager.json_serializer)
         
-    def store_job_metadata(self,job_id: str, address: str, mobile_number: str, screening_date: str):
+    def store_job_metadata(self,job_id: str, address: str, mobile_number: str, screening_date: str, is_anm_present: bool = False, max_existing_child_without_data: int = 80000):
         """
         Storing job related metadata in different place
         """
         status = JobStatus.IDLE
         job_dir = Path("jobs") / job_id
         created_at = datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
-        jobMetadata = JobMetadata(job_id=job_id, status=status, created_at=created_at, address=address, mobile_number=mobile_number, date=screening_date)
+        jobMetadata = JobMetadata(job_id=job_id, status=status, created_at=created_at, address=address, mobile_number=mobile_number, date=screening_date,is_anm_present=is_anm_present, max_existing_child_without_data=max_existing_child_without_data)
         with open(job_dir / "job.json", "w", encoding="utf-8") as f:
             json.dump(asdict(jobMetadata), f, indent=2,default=JobManager.json_serializer)
 

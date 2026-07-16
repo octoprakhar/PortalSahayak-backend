@@ -342,3 +342,28 @@ def standardize_facility(df):
             )
 
     return df
+
+
+def standardize_height_weight(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
+
+    ages = df["dob"].apply(get_age)
+
+    corrected = ages.apply(
+        lambda age: get_corrected_values(age)
+        if pd.notna(age)
+        else (None, None)
+    )
+
+    df["_corrected_weight"] = corrected.apply(lambda x: x[0])
+    df["_corrected_height"] = corrected.apply(lambda x: x[1])
+
+    weight_mask = df["weight"].isna()
+    height_mask = df["height"].isna()
+
+    df.loc[weight_mask, "weight"] = df.loc[weight_mask, "_corrected_weight"]
+    df.loc[height_mask, "height"] = df.loc[height_mask, "_corrected_height"]
+
+    df.drop(columns=["_corrected_weight", "_corrected_height"], inplace=True)
+
+    return df

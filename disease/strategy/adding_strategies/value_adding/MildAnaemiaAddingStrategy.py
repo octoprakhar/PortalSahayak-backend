@@ -6,7 +6,7 @@ from disease.repository.DiseaseRepository import DiseaseRepository
 class MildAnaemiaAddingStrategy(ValueAddingStrategy):
     def __init__(self):
         super().__init__()
-        self.MIN_HB = 4
+        self.MIN_HB = 9
 
     def reach_limit(self, manipulator: DiseaseManipulator):
         current_hb = manipulator.get_hb()

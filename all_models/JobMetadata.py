@@ -14,6 +14,8 @@ class JobMetadata:
     date: str
     uploaded_file: str = "uploaded.csv"
     institution_data: InstitutionData = None
+    is_anm_present: bool = False
+    max_existing_child_without_data: int = 80000
 
     @classmethod
     def from_dict(cls, data: dict):

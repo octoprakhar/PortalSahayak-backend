@@ -9,7 +9,7 @@ import numpy as np
 
 from all_models.child_models import Child 
 from services.ChildDataValidation import ChildDataValidation
-from utils.loaderUtils import get_age,get_head_circumference, clean_dob, normalize_hb,normalize_gender,fill_disease_from_nan, standardize_facility
+from utils.loaderUtils import get_age,get_head_circumference, clean_dob, normalize_hb,normalize_gender,fill_disease_from_nan, standardize_facility,standardize_height_weight
 
 
 class ChildLoader:
@@ -149,6 +149,8 @@ class ChildLoader:
         ## NOTE: Removing random disease selection from pre-processing
         # trans_df = fill_disease_from_nan(trans_df)
         # logging.info("Random diseases got set")
+
+        trans_df = standardize_height_weight(df=trans_df)
 
         ## Mapping faculty name with DEIC, NRC, CHC(default)
         trans_df = standardize_facility(trans_df)

@@ -18,7 +18,7 @@ from constants.ChildType import ChildType
 from constants.institution_type import InstitutionType
 
 class ExistingChildrenWithoutData:
-    def __init__(self, mobileNumber:str, page:Page,address:str, count_manager: DiseaseCountManager, selected_mapping: dict[str,str],institution_type: str, job_id: str = None, synchronizer : PageSynchronizer = None):
+    def __init__(self, mobileNumber:str, page:Page,address:str, count_manager: DiseaseCountManager, selected_mapping: dict[str,str], max_children_count: int,institution_type: str, job_id: str = None, synchronizer : PageSynchronizer = None):
         self.mobileNumber = mobileNumber
         self.page = page
         self.address = address
@@ -27,6 +27,7 @@ class ExistingChildrenWithoutData:
         self.count_manager = count_manager
         self.selected_mapping = selected_mapping
         self.institution_type = institution_type
+        self.max_children_count = max_children_count
 
     def _getNumberOfPages(self) -> int | None:
         page_info = self.page.locator(
@@ -184,7 +185,12 @@ class ExistingChildrenWithoutData:
         pages = self._getNumberOfPages()
         logging.info(f"Got number of pages as {pages}")
         nextBtn = self.page.locator("button",has_text="Next")
+        curr_children_count = 0
         for curr_page in range(1, pages + 1):
+
+            if curr_children_count > self.max_children_count:
+                break
+            
 
             logging.info(f"Moving to page {curr_page}")
 
@@ -195,6 +201,12 @@ class ExistingChildrenWithoutData:
             eligible_children = self._eligibleChildren(all_children)
 
             for child in eligible_children:
+
+                if curr_children_count > self.max_children_count:
+                    logging.info("Current count exceeded")
+                    break
+                
+                logging.info(f"Current Existing child without data count is: {curr_children_count}, and max is: {self.max_children_count}")
                 
 
                 try:
@@ -227,6 +239,7 @@ class ExistingChildrenWithoutData:
                     logging.info(
                         f"Saved child {child.name}"
                     )
+                    curr_children_count += 1
 
                     # IMPORTANT
                     # website reset to page 1 after save

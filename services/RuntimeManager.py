@@ -141,7 +141,7 @@ class RunTimeManager:
         InstitutionSelectionPage.go_to_institution_month(page=page,synchronizer=self.synchronizer,date=screening_date)
         
 
-    def start_child_screening(self, page: Page, uploaded_file_path: str, address: str, mobile_number: str, screening_date: str, report_creator: ReportCreator, selected_mapping: dict[str,str],institution_data: InstitutionData | None = None, is_ANM_Present: bool = True):
+    def start_child_screening(self, page: Page, uploaded_file_path: str, address: str, mobile_number: str, screening_date: str, report_creator: ReportCreator, selected_mapping: dict[str,str],max_existing_child_given:int,institution_data: InstitutionData | None = None, is_ANM_Present: bool = True):
         """
         It will Trigger ChildScreening class to start screening, and change the job status to "RUNNING"
         
@@ -181,7 +181,7 @@ class RunTimeManager:
 
         ## Start Screening Workflow with all the data
         try:
-            screeningWorkFLow: ScreeningWorkflow = ScreeningWorkflow(page=page,job_id=self.job_id,synchronizer=self.synchronizer,report_creator=report_creator,selected_mapping=selected_mapping, institution_type=institution_data.institution_type)
+            screeningWorkFLow: ScreeningWorkflow = ScreeningWorkflow(page=page,job_id=self.job_id,synchronizer=self.synchronizer,report_creator=report_creator,selected_mapping=selected_mapping, institution_type=institution_data.institution_type,max_existing_child_given=max_existing_child_given)
         
             screeningWorkFLow.run(uploaded_file_path,mobile_number,address)
             self.logger("Completed the JOB Succesfully 🎉🎉🎉🎉.",LogType.SUCCESS)

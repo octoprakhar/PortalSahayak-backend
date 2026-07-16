@@ -3,6 +3,15 @@ class DiseaseQuotaConfig:
     """
     It will tell the total number of children max to be assigned for each diseases.
     """
+    # QUOTAS = {
+    #     "SAM/Severe Thinness/SUW": 0,
+    #     "Mild Anaemia": 0.10,
+    #     "Moderate Anaemia": 0.10,
+    #     "Severe Stunting": 0,
+    #     "Skin Conditions": 0,
+    #     "Dental Conditions": 0,
+    # }
+
     QUOTAS = {
         "SAM/Severe Thinness/SUW": 0.02,
         "Mild Anaemia": 0.25,

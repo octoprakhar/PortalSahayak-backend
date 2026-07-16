@@ -199,12 +199,11 @@ class ChildScreeningPage:
 
         ## IF target complete box appears 
         message = self.page.get_by_text(
-            "Planned children for this institution have been screened. Do you want to screen more?",
-            exact=True
+            "have been screened. Do you want to screen more?"
         )
 
         if message.is_visible():
-            self.page.get_by_role("button", name="Yes, proceed!").click()        
+            self.page.get_by_role("button", name="Yes, proceed!").click()     
 
         self.page.wait_for_timeout(1000)
         self.page.get_by_role('button',name="Proceed").click()
@@ -441,19 +440,19 @@ class ChildScreeningPage:
         ## Check if target of students are completed then just press 'Yes proceed button automatically'
         
         message = self.page.get_by_text(
-            "Planned children for this institution have been screened. Do you want to screen more?",
-            exact=True
+            "have been screened. Do you want to screen more?"
         )
 
         if message.is_visible():
             self.page.get_by_role("button", name="Yes, proceed!").click()
-            
 
         self.synchronizer.wait_loading(page=self.page)
 
         healthReportFeedbackResult = self.insertHealthReport(result=child_result if existing_child_result is None else existing_child_result)
         self._log_feedback(healthReportFeedbackResult)
         if healthReportFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
+            ## fOR TESTING purposes
+            self.page.wait_for_timeout(5000)
             self._skip_child()
             if existing_child_result is None:
                 child_result.feedback = healthReportFeedbackResult

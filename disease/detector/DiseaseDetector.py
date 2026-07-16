@@ -1,4 +1,5 @@
 from playwright.sync_api import Page,Locator
+import logging
 
 from disease.models.DetectedDisease import DetectedDisease
 from disease.repository.DiseaseRepository import DiseaseRepository
@@ -79,20 +80,20 @@ class DiseaseDetector:
         ## First get that table if present
         required_table = self._get_table()
         if not required_table or required_table is None:
-            # print("No table found")
+            # logging.info("No table found")
             return []
-        # print(f"Got table for diseases as this \n{required_table.inner_text()}")
+        # logging.info(f"Got table for diseases as this \n{required_table.inner_text()}")
         
         ## If we found that row, then next work is simple, getting the disease name
         health_condition_names = self._get_health_condition_name(table=required_table)
-        # print(f"Got health condition names as : {health_condition_names}")
+        # logging.info(f"Got health condition names as : {health_condition_names}")
 
-        # print("========================")
+        # logging.info("========================")
         if not health_condition_names:
-            # print("We got the table, but can't get the health condition name")
+            # logging.info("We got the table, but can't get the health condition name")
             return []
         
-        # print(f"Got health condition names as : {health_condition_names}")
+        # logging.info(f"Got health condition names as : {health_condition_names}")
 
         ## Now get disease by name for all the list of diseases
         all_diseases = []
@@ -104,8 +105,8 @@ class DiseaseDetector:
                 continue
             all_diseases.append(full_condition_data)
 
-        # print("==============================")
-        # print(f"got all the diseases with metadata as: {all_diseases}")
+        # logging.info("==============================")
+        logging.info(f"got all the diseases with metadata as: {all_diseases}")
 
         ## Now change those diseases to Defected disease class with DiseaseSource.UNKNOWN, because in the starting we don't know whether it is 
         # having what source

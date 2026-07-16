@@ -131,8 +131,8 @@ class InstitutionSelectionPage:
 
             card.click()
 
-        print("final review timer before summitting")
-        self.page.wait_for_timeout(5000)
+        # print("final review timer before summitting")
+        # self.page.wait_for_timeout(5000)
 
         popup.get_by_role(
             "button",
