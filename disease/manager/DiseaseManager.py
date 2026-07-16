@@ -110,7 +110,7 @@ class DiseaseManager:
 
         ## After doing user's disease thing check again
         detected_diseases : list[DetectedDisease] = self.detector.detect()
-        logging.info(f"Got detected diseases for child: {child.name} as:\n{detected_diseases}")
+        logging.info(f"DiseaseManager: Got detected diseases for child: {child.name} as:\n{detected_diseases}")
         if detected_diseases:
             # print(f"Initial detected diseases are: \n{detected_diseases}")
             # print("====================================")

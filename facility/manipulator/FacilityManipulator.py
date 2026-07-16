@@ -3,7 +3,6 @@ import logging
 
 from facility.model.ReferralDecision import ReferralDecision
 from services.PageSynchronizer import PageSynchronizer
-from facility.constants.FacilityLoadResult import FacilityLoadResult
 
 class FacilityManipulator:
     """
@@ -84,8 +83,7 @@ class FacilityManipulator:
         # Wait for dropdown to appear and click the option
         option = self.page.get_by_role("option", name=facility_type, exact=True)
         option.wait_for(state="visible")
-        # option.click()
-        result = self.synchronizer.click_and_wait_for_facility_reload(option=option, page=self.page)
+        option.click()
         
 
     def _select_facility_name(self,disease_row: Locator, facility_name: str, facility_name_col_idx: int):
@@ -101,7 +99,7 @@ class FacilityManipulator:
 
         # Wait for dropdown to appear and click the option
         option = self.page.get_by_role("option", name=facility_name, exact=True)
-        option.wait_for(state="visible")
+        option.wait_for(state="visible",timeout=30000)
         option.click()
 
         

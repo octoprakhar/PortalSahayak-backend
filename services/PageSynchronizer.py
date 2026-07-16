@@ -2,7 +2,6 @@ from playwright.sync_api import Page,Locator,TimeoutError
 from threading import Event
 import logging
 
-from facility.constants.FacilityLoadResult import FacilityLoadResult
 
 
 class PageSynchronizer:
@@ -46,26 +45,41 @@ class PageSynchronizer:
         except TimeoutError:
             raise Exception("Institution dropdown was not populated.")
         
-    def wait_for_setting_height_or_weight(self,page:Page):
-        page.wait_for_function("""
-                        () => {
-                            const w = document.querySelector(
-                                'select[name="weightAgeClassification"]'
-                            )?.value;
+    def wait_for_setting_height_or_weight(self, page: Page):
+        page.wait_for_function(
+            """
+            () => {
+                // First group
+                const anthropometry = [
+                    document.querySelector('select[name="weightAgeClassification"]'),
+                    document.querySelector('select[name="lengthAgeClassification"]'),
+                    document.querySelector('select[name="weightHeightClassification"]')
+                ];
 
-                            const l = document.querySelector(
-                                'select[name="lengthAgeClassification"]'
-                            )?.value;
+                // Second group
+                const bmi = [
+                    document.querySelector('select[name="bmiClassification"]'),
+                    document.querySelector('select[name="bmiResult"]')
+                ];
 
-                            const wh = document.querySelector(
-                                'select[name="weightHeightClassification"]'
-                            )?.value;
+                // Determine which complete group exists on the page
+                let activeGroup;
 
-                            return w !== "0" &&
-                                l !== "0" &&
-                                wh !== "0";
-                        }
-                        """, timeout=15000)
+                if (anthropometry.every(el => el !== null)) {
+                    activeGroup = anthropometry;
+                } else if (bmi.every(el => el !== null)) {
+                    activeGroup = bmi;
+                } else {
+                    // No complete group yet
+                    return false;
+                }
+
+                // Wait until every select in the active group has a value other than "0"
+                return activeGroup.every(el => el.value !== "0");
+            }
+            """,
+            timeout=15000,
+        )
         
     def wait_for_setting_head_circumference(self,page:Page):
         page.wait_for_function("""
@@ -108,58 +122,3 @@ class PageSynchronizer:
         except TimeoutError:
             raise Exception("Toast notification(s) did not disappear.")
         
-    def click_and_wait_for_facility_reload(
-        self,
-        option: Locator,
-        page: Page,
-        cache_check_timeout_ms: int = 1000,
-        response_timeout_ms: int = 10000,
-    ):
-
-        request_happened = Event()
-
-        def on_request(req):
-            if (
-                "Hierarchy_Master/Get_HierarchyMaster" in req.url
-                and req.method == "POST"
-                and (req.post_data_json or {}).get("masterType") == 11
-            ):
-                request_happened.set()
-
-        page.on("request", on_request)
-
-        try:
-            with page.expect_response(
-                lambda r: (
-                    "Hierarchy_Master/Get_HierarchyMaster" in r.url
-                    and r.request.method == "POST"
-                    and (r.request.post_data_json or {}).get("masterType") == 11
-                ),
-                timeout=response_timeout_ms,
-            ) as response_info:
-
-                option.click()
-
-                # Allow cache case to reveal itself
-                if not request_happened.wait(cache_check_timeout_ms / 1000):
-                    return FacilityLoadResult.CACHE
-
-            response = response_info.value
-
-        except TimeoutError:
-            if not request_happened.is_set():
-                return FacilityLoadResult.CACHE
-
-            raise TimeoutError(
-                "Facility request was sent but response did not arrive."
-            )
-
-        finally:
-            page.remove_listener("request", on_request)
-
-        body = response.json()
-
-        if not body.get("data"):
-            return FacilityLoadResult.EMPTY
-
-        return FacilityLoadResult.SERVER

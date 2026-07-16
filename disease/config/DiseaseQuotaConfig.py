@@ -6,7 +6,7 @@ class DiseaseQuotaConfig:
     # QUOTAS = {
     #     "SAM/Severe Thinness/SUW": 0,
     #     "Mild Anaemia": 0.10,
-    #     "Moderate Anaemia": 0.10,
+    #     "Moderate Anaemia": 0,
     #     "Severe Stunting": 0,
     #     "Skin Conditions": 0,
     #     "Dental Conditions": 0,

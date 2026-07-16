@@ -95,7 +95,7 @@ def normalize_hb(hb):
     # Check if the value is missing, null, or not a number
     if pd.isna(hb) or (not isinstance(hb, (int, float))):
         # Generate a random float between 11.0 and 14.0 and round to 1 decimal place
-        return round(random.uniform(11.0, 14.0), 1)
+        return round(random.uniform(12.0, 14.0), 1)
     
     # Cap values exceeding 14
     if hb > 14:

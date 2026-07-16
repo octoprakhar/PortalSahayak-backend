@@ -263,6 +263,8 @@ class ChildScreeningPage:
         heightField = self.page.locator('[name="height"]')
         weightField = self.page.locator('[name="weight"]')
         hbField = self.page.locator('[name="hb"]')
+
+        logging.info(f"Got real hb of the child as {self.child.hb}")
         
 
         # random_number = random.randint(0, 9)
@@ -274,29 +276,7 @@ class ChildScreeningPage:
         hbField.fill(self.child.hb)
         
 
-        try:
-            self.page.wait_for_function("""
-                () => {
-                    const w = document.querySelector(
-                        'select[name="weightAgeClassification"]'
-                    )?.value;
-
-                    const l = document.querySelector(
-                        'select[name="lengthAgeClassification"]'
-                    )?.value;
-
-                    const wh = document.querySelector(
-                        'select[name="weightHeightClassification"]'
-                    )?.value;
-
-                    return w !== "0" &&
-                        l !== "0" &&
-                        wh !== "0";
-                }
-                """, timeout=5000)
-        except Exception as e:
-            logging.error(f"Error occured while trying to get functions correct: {e}")
-            return FeedbackResult(outcome=FeedbackOutcome.FAILURE, message=e.message)
+        self.synchronizer.wait_for_setting_height_or_weight(page=self.page)
         
 
         self._fill_if_visible('[name="headCircumference"]', self.child.headCircumference)
@@ -309,6 +289,7 @@ class ChildScreeningPage:
         self._select_if_visible('select[name="visionLeft"]', self.child.visionLeft)
         self._select_if_visible('select[name="visionRight"]', self.child.visionRight)
 
+        # logging.info("Waiting before disease detection, and then bp filling")
         # self.page.wait_for_timeout(5000)
 
         ## Calling disease manager for final check

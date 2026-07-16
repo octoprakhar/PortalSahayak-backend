@@ -188,7 +188,7 @@ class ExistingChildrenWithoutData:
         curr_children_count = 0
         for curr_page in range(1, pages + 1):
 
-            if curr_children_count > self.max_children_count:
+            if curr_children_count >= self.max_children_count:
                 break
             
 
@@ -202,7 +202,7 @@ class ExistingChildrenWithoutData:
 
             for child in eligible_children:
 
-                if curr_children_count > self.max_children_count:
+                if curr_children_count >= self.max_children_count:
                     logging.info("Current count exceeded")
                     break
                 

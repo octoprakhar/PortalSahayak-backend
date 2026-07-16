@@ -28,6 +28,8 @@ class DiseaseRemovalStrategyRepository:
                 lambda: CheckboxRemovalStrategy(),
             "Dental Conditions":
                 lambda: CheckboxRemovalStrategy(),
+            "Skin Condtions Not Leprosy":
+                lambda: CheckboxRemovalStrategy(),
             "Severe Stunting":
                 lambda: SevereStuntingRemovalStrategy(),
             "Microcephaly":
@@ -42,6 +44,8 @@ class DiseaseRemovalStrategyRepository:
                 lambda: ObesityRemovalStrategy(),
             "Prehypertension":
                 lambda: PrehypertensionRemovalStrategy(),
+            "Severe Anemia":
+                lambda: AnaemiaRemovalStrategy(),
             "DEFAULT":
                 lambda: NoRemovalStrategy()
         }

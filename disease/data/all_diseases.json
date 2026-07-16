@@ -192,6 +192,17 @@
         ]
     },
     {
+        "name": "Obesity",
+        "code": "45",
+        "category": "DEFICIENCIES",
+        "questions": [
+            {
+            "code": "B7",
+            "text": "Obesity: Body Mass Index : Weight / Height ratio as per BMI chart > +2SD"
+            }
+        ]
+    },
+    {
         "name": "Vitamin B Complex Deficiency",
         "code": "44",
         "category": "DEFICIENCIES",
