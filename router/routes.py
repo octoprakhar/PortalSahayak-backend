@@ -17,6 +17,7 @@ from constants.WorkerType import WorkerType
 from websocket.WebsocketManager import WebsocketManger
 from all_models.dto.request.FacilityMappingRequest import FacilityMappingRequest
 from all_models.FacilityCatalog import FacilityCatalog
+from all_models.ClassRange import ClassRange
 
 
 
@@ -184,11 +185,13 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
 async def post_job_metadata(
     request: Request,
     is_anm_present: Optional[bool] = Form(None),
-    max_existing_child_without_data: Optional[int] = Form(None),
+    from_class: Optional[int] = Form(None),
+    to_class: Optional[int] = Form(None),
     address: Optional[str] = Form(None),
     mobileNumber: Optional[str] = Form(None),
     date: Optional[str] = Form(None),
     job_id: Optional[str] = Form(None),
+    existing_limit: Optional[int] = Form(None)
     
 
 ):
@@ -222,10 +225,14 @@ async def post_job_metadata(
             status_code=400,
             detail="Job ID is required"
         )
+    class_range = None
+
+    if from_class and to_class:
+        class_range = ClassRange(from_class=from_class, to_class=to_class) 
     
     try:
         jobManager = JobManager() ## For testing
-        jobManager.store_job_metadata(job_id=job_id, address=address,mobile_number=mobileNumber,screening_date=date,is_anm_present=is_anm_present, max_existing_child_without_data=max_existing_child_without_data)
+        jobManager.store_job_metadata(job_id=job_id, address=address,mobile_number=mobileNumber,screening_date=date,is_anm_present=is_anm_present, class_range=class_range, existing_limit = existing_limit)
 
         ## Now create worker for institution work
         workerFactory = WorkerFactory(application_services=services)
@@ -332,7 +339,7 @@ def start_job_screeninhg(request:Request,job_id: Optional[str] = Form(None),uplo
         ## Create screening worker and pass the command for start screening
         workerFactory = WorkerFactory(application_services=services)
         screening_worker = workerFactory.create(job_id=job_id, worker_type=WorkerType.SCREENING_WORKER)
-        screening_worker.send(message=Message(job_id=job_id,command=Commands.START_SCREENING, payload={"institution_name":job_metadata.institution_data.institution_name, "institution_plan_id":job_metadata.institution_data.institution_plan_id, "institution_type": job_metadata.institution_data.institution_type, "planned_date": job_metadata.date, "uploaded_file_path": job_metadata.uploaded_file, "address": job_metadata.address, "mobile_number": job_metadata.mobile_number,"selected_facility":user_metadata.selected_facility,"is_ANM_Present":job_metadata.is_anm_present, "max_existing_child_given": job_metadata.max_existing_child_without_data}))
+        screening_worker.send(message=Message(job_id=job_id,command=Commands.START_SCREENING, payload={"institution_name":job_metadata.institution_data.institution_name, "institution_plan_id":job_metadata.institution_data.institution_plan_id, "institution_type": job_metadata.institution_data.institution_type, "planned_date": job_metadata.date, "uploaded_file_path": job_metadata.uploaded_file, "address": job_metadata.address, "mobile_number": job_metadata.mobile_number,"selected_facility":user_metadata.selected_facility,"is_ANM_Present":job_metadata.is_anm_present, "class_range": job_metadata.class_range if job_metadata.institution_data.institution_type == "school" else None, "existing_limit": job_metadata.existing_limit}))
         return {"status":"ok","job_id":job_id}
     except Exception as e:
         logging.exception(str(e))

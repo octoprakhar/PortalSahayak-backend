@@ -10,6 +10,8 @@ class FacilityMappingRule:
         target_diseases = ["Severe Stunting", "Mild Anaemia", "Moderate Anaemia", "Skin Conditions", "Dental Conditions", "Skin Condtions Not Leprosy"]
         if disease.definition.name == "SAM/Severe Thinness/SUW":
             return FacilityType.NRC
+        if disease.definition.name == "Referactive Problems":
+            return FacilityType.DISTRICT
         if disease.definition.name in target_diseases:
             return FacilityType.BLOCK
         

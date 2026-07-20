@@ -5,6 +5,7 @@ from disease.strategy.adding_strategies.value_adding.MildAnaemiaAddingStrategy i
 from disease.strategy.adding_strategies.value_adding.ModerateAnaemiaAddingStrategy import ModerateAnaemiaAddingStrategy
 from disease.strategy.adding_strategies.DiseaseAdditionStrategy import DiseaseAdditionStrategy
 from disease.strategy.adding_strategies.checkbox_adding.SkinDiseaseNotLeprosyAdditionStrategy import SkinDiseaseNotLeprosyAdditionStrategy
+from disease.strategy.adding_strategies.value_adding.ReferactiveProblemsAddingStrategy import ReferactiveProblemsAdditionStrategy
 
 
 class DiseaseAdditionStrategyRepository:
@@ -25,7 +26,9 @@ class DiseaseAdditionStrategyRepository:
             "Mild Anaemia":
                 lambda: MildAnaemiaAddingStrategy(),
             "Skin Condtions Not Leprosy":
-                lambda: SkinDiseaseNotLeprosyAdditionStrategy()
+                lambda: SkinDiseaseNotLeprosyAdditionStrategy(),
+            "Referactive Problems":
+                lambda: ReferactiveProblemsAdditionStrategy()
         }
         
     def get_strategy_by_disease_name(self, disease_name) -> DiseaseAdditionStrategy | None:

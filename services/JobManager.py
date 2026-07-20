@@ -21,6 +21,7 @@ from all_models.UserMetadata import UserMetadata
 from all_models.InstitutionData import InstitutionData
 from all_models.UserRegistrationMetadata import UserRegistrationMetadata
 from all_models.FacilityCatalog import FacilityCatalog
+from all_models.ClassRange import ClassRange
 
 from utils.persistantUtils import to_report_row
 
@@ -102,14 +103,14 @@ class JobManager:
             
             json.dump(asdict(userMetadata), f, indent=2,default=JobManager.json_serializer)
         
-    def store_job_metadata(self,job_id: str, address: str, mobile_number: str, screening_date: str, is_anm_present: bool = False, max_existing_child_without_data: int = 80000):
+    def store_job_metadata(self,job_id: str, address: str, mobile_number: str, screening_date: str,existing_limit:int, is_anm_present: bool = False, class_range: ClassRange = None):
         """
         Storing job related metadata in different place
         """
         status = JobStatus.IDLE
         job_dir = Path("jobs") / job_id
         created_at = datetime.now(ZoneInfo("Asia/Kolkata")).isoformat()
-        jobMetadata = JobMetadata(job_id=job_id, status=status, created_at=created_at, address=address, mobile_number=mobile_number, date=screening_date,is_anm_present=is_anm_present, max_existing_child_without_data=max_existing_child_without_data)
+        jobMetadata = JobMetadata(job_id=job_id, status=status, created_at=created_at, address=address, mobile_number=mobile_number, date=screening_date,is_anm_present=is_anm_present, existing_limit=existing_limit,class_range=class_range)
         with open(job_dir / "job.json", "w", encoding="utf-8") as f:
             json.dump(asdict(jobMetadata), f, indent=2,default=JobManager.json_serializer)
 

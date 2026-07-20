@@ -6,6 +6,7 @@ from disease.rules.SevereStuntingRule import SevereStuntingRule
 from disease.rules.MildAnaemiaRule import MildAnaemiaRule
 from disease.rules.ModerateAnaemiaRule import ModerateAnaemiaRule
 from disease.rules.SkinConditionsNotLeprosyRule import SkinConditionsNotLeprosyRule
+from disease.rules.RefractiveProblemRule import ReferactiveProblemsRule
 
 class DiseaseRuleRepository:
     """
@@ -21,7 +22,8 @@ class DiseaseRuleRepository:
             "Moderate Anaemia": ModerateAnaemiaRule(),
             "Skin Conditions": SkinConditionRule(),
             "Dental Conditions": DentalConditionRule(),
-            "Skin Condtions Not Leprosy": SkinConditionsNotLeprosyRule()
+            "Skin Condtions Not Leprosy": SkinConditionsNotLeprosyRule(),
+            "Referactive Problems": ReferactiveProblemsRule()## We added referactive problem, because it is a value based disease, and we need a rule clearance for adding any disease from our software, otherwise it throws error
                       }
         
     def get_rule(self, disease_name: str) -> DiseaseRule | None:

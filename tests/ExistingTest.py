@@ -1,6 +1,12 @@
 from playwright.sync_api import sync_playwright
 import logging
 
+from constants.log_type import LogType
+from disease.factory.DiseaseCountFactory import DiseaseCountFactory
+from all_models.ClassRange import ClassRange
+
+from services.PageSynchronizer import PageSynchronizer
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
@@ -21,6 +27,15 @@ child = Child(
     weight="2"
 )
 
+selected_mapping = {
+        "District Level Facility": "DIST HOSPITAL BALAGHAT (District Level Facility)",
+        "Block Level Facility": "CHC LALBARRA (Block Level Facility)",
+        "NRC": "NRC DH BALAGHAT (NRC)",
+        "DEIC": "DEIC Balaghat (DEIC)"
+    }
+
+def logger(msg:str,logType: LogType) -> None:
+    pass
 
 
 with sync_playwright() as p:
@@ -36,7 +51,8 @@ with sync_playwright() as p:
     page.wait_for_load_state('networkidle')
     input("Select the institution you want to fill students and then click enter....")
     
-
-    existingChildren = ExistingChildrenWithoutData(mobileNumber="6265449307", address="GARAPURI", page=page)
+    factory = DiseaseCountFactory()
+    count_manager = factory.create(1)
+    existingChildren = ExistingChildrenWithoutData(mobileNumber="6265449307", address="GARAPURI", page=page,count_manager=count_manager, selected_mapping=selected_mapping, max_children_count=0, institution_type="school", class_range=ClassRange(from_class=9, to_class=9), job_id="ABC",synchronizer=PageSynchronizer())
     existingChildren.addExistingChildren()
     page.wait_for_timeout(3000)

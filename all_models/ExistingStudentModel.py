@@ -9,3 +9,4 @@ class ExistingChildResult:
     motherName: str
     gender: str
     isStartScreeningButtonPresent: bool
+    child_class: int | None

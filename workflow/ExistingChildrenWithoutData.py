@@ -12,13 +12,15 @@ from utils.loaderUtils import get_age
 from services.PageSynchronizer import PageSynchronizer
 from disease.manager.DiseaseCountManager import DiseaseCountManager
 from all_models.ChildRunResult import ChildRunResult
+from all_models.ClassRange import ClassRange
 from constants.WorkflowStage import WorkflowStage
 from constants.ChildType import ChildType
+from all_models.FeedbackResult import FeedbackOutcome
 
 from constants.institution_type import InstitutionType
 
 class ExistingChildrenWithoutData:
-    def __init__(self, mobileNumber:str, page:Page,address:str, count_manager: DiseaseCountManager, selected_mapping: dict[str,str], max_children_count: int,institution_type: str, job_id: str = None, synchronizer : PageSynchronizer = None):
+    def __init__(self, mobileNumber:str, page:Page,address:str, count_manager: DiseaseCountManager, selected_mapping: dict[str,str], max_children_count: int,institution_type: str, existing_limit: int, class_range: ClassRange = None, job_id: str = None, synchronizer : PageSynchronizer = None):
         self.mobileNumber = mobileNumber
         self.page = page
         self.address = address
@@ -28,6 +30,8 @@ class ExistingChildrenWithoutData:
         self.selected_mapping = selected_mapping
         self.institution_type = institution_type
         self.max_children_count = max_children_count
+        self.class_range = class_range
+        self.existing_limit = existing_limit
 
     def _getNumberOfPages(self) -> int | None:
         page_info = self.page.locator(
@@ -98,11 +102,19 @@ class ExistingChildrenWithoutData:
         """
         dob_parts = dob.strip().split("-")[::-1]
         return "-".join(dob_parts)
+    
+    def _get_class(self,class_str: str)-> int:
+        """
+        Convert a string like 'Class 9' (with optional leading/trailing spaces)
+        into the integer 9.
+        """
+        class_str = class_str.strip()
+        return int(class_str.split()[-1])
 
 
     def _getAllChild(self) -> list[ExistingChildResult]:
         """
-        Returning all the children currently showing on the table, without clicking the next button,
+        Returning all the children currently showing on the table without clicking the next button, 
         using column names instead of hardcoded indexes so it survives
         column reordering/addition/removal
         """
@@ -137,46 +149,66 @@ class ExistingChildrenWithoutData:
             health_status = get_cell("Health Status")
 
             isStartScreeningButtonPresent = not bool(health_status)
+            child_class = None
+
+            if self.institution_type == "school":
+                child_class_str = get_cell("Class")
+                child_class = self._get_class(class_str=child_class_str)
 
 
-            all_children.append(ExistingChildResult(name=name, dob=dob, fatherName=fatherName, motherName=motherName, gender=gender, isStartScreeningButtonPresent=isStartScreeningButtonPresent ))
+
+            all_children.append(ExistingChildResult(name=name, dob=dob, fatherName=fatherName, motherName=motherName, gender=gender, isStartScreeningButtonPresent=isStartScreeningButtonPresent, child_class=child_class ))
 
 
         return all_children
     
-    def _eligibleChildren(self, existingChildrenList: list[ExistingChildResult]) -> list[ExistingChildResult]:
+    def _eligibleChildren(
+        self, existingChildrenList: list[ExistingChildResult]
+    ) -> list[ExistingChildResult]:
         """
-        All child who are below 5 years of age, and has startScreening button present should get return, and they must be on that page, without next 
-        button to change the pagination
+        Returns all eligible children.
+
+        - AWC:
+            - Age < 6
+            - Start Screening button present
+        - SCHOOL:
+            - Age < 19
+            - Start Screening button present
+            - Child's class lies within the configured class range (inclusive)
         """
         eligibleChildren = []
 
         for child in existingChildrenList:
-            logging.info(f"Checking eligibility of {child.name} with age {get_age(child.dob)}, and start screeining as {child.isStartScreeningButtonPresent}")
             age = get_age(child.dob)
-            if (age < 6 and child.isStartScreeningButtonPresent and self.institution_type == InstitutionType.AWC.value) or (age < 19 and child.isStartScreeningButtonPresent and self.institution_type == InstitutionType.SCHOOL.value):
-                eligibleChildren.append(child)
 
-        
+            # logging.info(
+            #     f"Checking eligibility of {child.name} "
+            #     f"with age {age}, "
+            #     f"start screening={child.isStartScreeningButtonPresent}, "
+            #     f"class={child.child_class}"
+            # )
+
+            if not child.isStartScreeningButtonPresent:
+                continue
+
+            if self.institution_type == InstitutionType.AWC.value:
+                if age < 6:
+                    eligibleChildren.append(child)
+
+            elif self.institution_type == InstitutionType.SCHOOL.value:
+                if age >= 19:
+                    continue
+
+                if (
+                    self.class_range is not None
+                    and child.child_class is not None
+                    and self.class_range.from_class
+                    <= child.child_class
+                    <= self.class_range.to_class
+                ):
+                    eligibleChildren.append(child)
+
         return eligibleChildren
-    
-    def getTotalEligibleChildren(self, is_AWC_Screening: bool = True)-> int:
-        total_children = 0
-
-        ## Step 1 go to the first page. It could be done by clicking on "Prev" button till it become disable to come to first page
-
-        ## Step 2, search for table whose table heads(not all headers but some) are "Name, Gender, Age, ScreeningActions"
-
-        ## If not present return 0
-
-        ## If present, get index column header for "Age", "ScreeningActions"
-        # Age will be like 4 years 5 months, if years value is greater than 6 and we are doing AWC screening(for now only AWC is there)
-        # Then age year greater than or equal to 6 is consider in-eligible, if age is less than 6 then it is eligible.
-
-        # Then after age check in ScreenAction, whether there is an element title="Start Screening" if it is present it is eligible.
-
-        ## When all the rows of this page table is over, just click on next button and then check again do this whole loop till it becomes disabled
-
     
     def addExistingChildren(self)->list[ChildRunResult]:
 
@@ -184,13 +216,13 @@ class ExistingChildrenWithoutData:
         all_child_results = []
         pages = self._getNumberOfPages()
         logging.info(f"Got number of pages as {pages}")
-        nextBtn = self.page.locator("button",has_text="Next")
-        curr_children_count = 0
+        logging.info(f"Got existing limit as : {self.existing_limit}")
+        logging.info(f"Got class range from class : {self.class_range.from_class} to {self.class_range.to_class}")
+        curr_count = 0
         for curr_page in range(1, pages + 1):
 
-            if curr_children_count >= self.max_children_count:
+            if curr_count >= self.existing_limit:
                 break
-            
 
             logging.info(f"Moving to page {curr_page}")
 
@@ -200,16 +232,21 @@ class ExistingChildrenWithoutData:
 
             eligible_children = self._eligibleChildren(all_children)
 
-            for child in eligible_children:
+            # logging.info(
+            #     "Eligible children:\n%s",
+            #     "\n".join(
+            #         f"  - Name: {c.name}, Age: {get_age(c.dob)}, Class: {c.child_class}, "
+            #         f"DOB: {c.dob}, Gender: {c.gender}"
+            #         for c in eligible_children
+            #     ) or "  None"
+            # )
 
-                if curr_children_count >= self.max_children_count:
-                    logging.info("Current count exceeded")
+            for child in eligible_children:
+                if curr_count >= self.existing_limit:
                     break
-                
-                logging.info(f"Current Existing child without data count is: {curr_children_count}, and max is: {self.max_children_count}")
-                
 
                 try:
+                    pass
 
                     childFactory = ChildFactory(
                         child=child,
@@ -233,13 +270,14 @@ class ExistingChildrenWithoutData:
                     child_result.stage = WorkflowStage.HEALTH_DETAILS
                     # NO locator needed now
                     final_child_result = child_screening.saveExistingChild(existing_child_result=child_result)
+                    if final_child_result.feedback.outcome == FeedbackOutcome.SUCCESS:
+                        curr_count += 1
 
                     all_child_results.append(final_child_result)
 
                     logging.info(
                         f"Saved child {child.name}"
                     )
-                    curr_children_count += 1
 
                     # IMPORTANT
                     # website reset to page 1 after save

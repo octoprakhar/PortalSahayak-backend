@@ -12,6 +12,7 @@ from all_models.ChildProcessingResult import ChildProcessingResult
 from constants.log_type import LogType
 from constants.ChildType import ChildType
 from all_models.ChildRunResult import ChildRunResult
+from all_models.ClassRange import ClassRange
 
 from services.PageSynchronizer import PageSynchronizer
 from services.ReportCreator import ReportCreator
@@ -20,7 +21,7 @@ from services.ExistingChildScanner import ExistingChildScanner
 
 
 class ScreeningWorkflow:
-    def __init__(self, page:Page,report_creator: ReportCreator, selected_mapping: dict[str,str], institution_type: str, max_existing_child_given: int, logger:Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None ):
+    def __init__(self, page:Page,report_creator: ReportCreator, selected_mapping: dict[str,str], institution_type: str, existing_limit: int, logger:Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None, class_range : ClassRange = None ):
         self.page = page
         self.loader = ChildLoader()
         self.job_id = job_id
@@ -29,7 +30,8 @@ class ScreeningWorkflow:
         self.synchronizer = synchronizer
         self.selected_mapping = selected_mapping
         self.institution_type = institution_type
-        self.max_existing_child_given = max_existing_child_given
+        self.class_range = class_range
+        self.existing_limit = existing_limit
 
 
     def run(self, excel_path, defaultContactNum: str, address: str = ""):
@@ -96,18 +98,17 @@ class ScreeningWorkflow:
         
         ## Let's enter the existing child, that are not present in dataset given
         logging.info("📢📢📢📢📢📢📢📢📢📢 Starting with Existing children📢📢📢📢📢📢📢📢📢📢📢📢📢📢📢📢")
-        scanner = ExistingChildScanner(page=self.page, is_awc_screening= self.institution_type == "awc")
+        scanner = ExistingChildScanner(page=self.page, is_awc_screening= self.institution_type == "awc", class_range= self.class_range if self.institution_type == "school" else None)
         total_existing = scanner.get_total_existing_student()
 
         existing_limit = min(
             total_existing,
-            self.max_existing_child_given
+            self.existing_limit  ## Just checking I will change it later
         )
-        logging.info(f"Got existing child are : {total_existing}, but limit was given as {self.max_existing_child_given}")
         existing_children_count_manager = DiseaseCountFactory().create(max_len=existing_limit)
         logging.info(f"Got existing disease manager max as : {existing_children_count_manager.get_max_counts()}")
         try:
-            existingChildrenWithoutData = ExistingChildrenWithoutData(mobileNumber=defaultContactNum, page=self.page, address=address, job_id=self.job_id,synchronizer=self.synchronizer, count_manager=existing_children_count_manager,selected_mapping=self.selected_mapping, institution_type=self.institution_type, max_children_count=existing_limit)
+            existingChildrenWithoutData = ExistingChildrenWithoutData(mobileNumber=defaultContactNum, page=self.page, address=address, job_id=self.job_id,synchronizer=self.synchronizer, count_manager=existing_children_count_manager,selected_mapping=self.selected_mapping, institution_type=self.institution_type, max_children_count=existing_limit, class_range=self.class_range, existing_limit=existing_limit)
             non_data_existing_children_results = existingChildrenWithoutData.addExistingChildren()
             for child_result in non_data_existing_children_results:
                 if child_result.feedback.outcome is not FeedbackOutcome.SUCCESS:

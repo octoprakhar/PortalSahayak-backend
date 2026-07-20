@@ -14,6 +14,7 @@ class DiseaseQuotaConfig:
 
     QUOTAS = {
         "SAM/Severe Thinness/SUW": 0.02,
+        "Referactive Problems": 0.1, ## Technically from the portal we don't wanna select this disease at all, only user should do it.
         "Mild Anaemia": 0.25,
         "Moderate Anaemia": 0.20,
         "Severe Stunting": 0.03,

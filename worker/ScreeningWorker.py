@@ -42,7 +42,8 @@ class ScreeningWorker(WorkerAbstract):
         mobile_number = payload["mobile_number"]
         address = payload["address"]
         selected_facility = payload["selected_facility"]
-        max_existing_child_given = payload["max_existing_child_given"]
+        class_range = payload.get("class_range", None)
+        existing_limit = payload.get("existing_limit")
         institution_data = InstitutionData(institution_name=institution_name, institution_plan_id=institution_plan_id,institution_type=institution_type,planned_date=planned_date)
         print(f"Got type of institution data as {type(institution_data)}, and it is {institution_data}")
         if not institution_data:
@@ -82,7 +83,7 @@ class ScreeningWorker(WorkerAbstract):
         # self._emit_event(event=Events.INSTITUTION_SELECTED, payload={"institution_data": institution_data})
 
         self.job_state = JobStatus.RUNNING
-        runtimeManger.start_child_screening(page=self.page, institution_data=institution_data, is_ANM_Present=is_ANM_Present,screening_date=screening_date,uploaded_file_path=uploaded_file_path,address=address,mobile_number=mobile_number,report_creator=self.report_creator,selected_mapping=selected_facility, max_existing_child_given=max_existing_child_given)
+        runtimeManger.start_child_screening(page=self.page, institution_data=institution_data, is_ANM_Present=is_ANM_Present,screening_date=screening_date,uploaded_file_path=uploaded_file_path,address=address,mobile_number=mobile_number,report_creator=self.report_creator,selected_mapping=selected_facility, class_range=class_range, existing_limit=existing_limit)
         success_path,failure_path = self.report_creator.flush()
         self._emit_event(Events.REPORT_CREATED,payload={"success_path": success_path,"failure_path":failure_path})
     

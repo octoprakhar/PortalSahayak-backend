@@ -293,5 +293,26 @@ class DiseaseManipulator:
         bp_input = self.page.locator('input[name="bloodPressureValue"]')
         bp_input.fill("")
 
+    def get_vision_left(self) -> str | None:
+        try:
+            return self.page.locator(
+                'select[name="visionLeft"] option:checked'
+            ).text_content()
+        except:
+            return None
+        
+    def set_vision_left(self, vision: str) -> bool:
+        self.page.locator('select[name="visionLeft"]').select_option(label=vision)
+
+    def get_vision_right(self) -> str | None:
+        try:
+            return self.page.locator(
+                'select[name="visionRight"] option:checked'
+            ).text_content()
+        except:
+            return None
+        
+    def set_vision_right(self, vision: str) -> bool:
+        self.page.locator('select[name="visionRight"]').select_option(label=vision)
     
         

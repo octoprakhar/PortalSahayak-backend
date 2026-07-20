@@ -46,7 +46,7 @@ class DiseaseManager:
         self.managed_disease_name = self.disease_rule_repo.get_managed_disease_names()
 
 
-    def _select_user_given_disease(self,disease_name: str)-> None:
+    def _select_user_given_disease(self,disease_name: str, child: Child, disease_context: DiseaseContext)-> None:
         """
         Using manipulator it will try selecting user's disease
         """
@@ -65,7 +65,18 @@ class DiseaseManager:
             manipulator.select_others_disease(disease=full_disease)
         else:
             # print(f"Got full disease as {full_disease}")
-            manipulator.click_check_box(disease=full_disease)
+            ## First check if addition rule is present for that user disease. It might be just disease that could be selected by value
+            addition_strategy = self.disease_addition_repo.get_strategy_by_disease_name(disease_name=disease_name)
+            if not addition_strategy:
+                # Then try checkbox clicking
+                logging.error("Can't found adding strategy for user selected disease. Now trying to click checkbox")
+                manipulator.click_check_box(disease=full_disease)
+
+            is_disease_added = addition_strategy.add(child=child,page=self.page,synchronizer=self.synchronizer,repository=self.full_diseases_repo)
+            if not is_disease_added:
+                logging.error(f"Even though after getting addintion strategy for the user given disease disease: {disease_name}, we can't add it.")
+            else:
+                logging.info(f"Added user given disease succesfully using addition strategy: {disease_name}.")
 
 
 
@@ -101,7 +112,7 @@ class DiseaseManager:
             valid_variant = self.disease_variant_registry.get_correct_variant(disease_name=child.diseaseName,curr_age=get_age(child.dob))
             logging.info(f"for user disease: {child.diseaseName}, got variant as {valid_variant}")
             try:
-                self._select_user_given_disease(disease_name=valid_variant)
+                self._select_user_given_disease(disease_name=valid_variant,child=child,disease_context=disease_context)
             except:
                 logging.error('Error happened while selecting user disease')
 
@@ -118,7 +129,7 @@ class DiseaseManager:
             for disease in detected_diseases:
                 # self.log_bp(f"Before working with: {disease.definition.name}")
                 logging.info(f"Now started for checking of disease : {disease.definition.name}")
-                if disease.definition.name == child.diseaseName:
+                if disease.definition.name == child.diseaseName and disease.definition.name not in self.managed_disease_name:
                     logging.info("This disease is given by the user")
                     continue
 

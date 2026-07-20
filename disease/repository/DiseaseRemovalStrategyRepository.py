@@ -10,6 +10,7 @@ from disease.strategy.removal_strategies.value_removal.MacrocephelyRemovalStrate
 from disease.strategy.removal_strategies.value_removal.AnaemiaRemovalStrategy import AnaemiaRemovalStrategy
 from disease.strategy.removal_strategies.value_removal.ObesityRemovalStrategy import ObesityRemovalStrategy
 from disease.strategy.removal_strategies.value_removal.PrehypertensionRemovalStrategy import PrehypertensionRemovalStrategy
+from disease.strategy.removal_strategies.value_removal.ReferactiveProblemRemovalStrategy import ReferactiveProblemsRemovalStrategy
 
 from services.PageSynchronizer import PageSynchronizer
 
@@ -46,6 +47,8 @@ class DiseaseRemovalStrategyRepository:
                 lambda: PrehypertensionRemovalStrategy(),
             "Severe Anemia":
                 lambda: AnaemiaRemovalStrategy(),
+            "Referactive Problems": 
+                lambda: ReferactiveProblemsRemovalStrategy(),
             "DEFAULT":
                 lambda: NoRemovalStrategy()
         }
