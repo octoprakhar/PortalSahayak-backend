@@ -103,13 +103,33 @@ class ExistingChildrenWithoutData:
         dob_parts = dob.strip().split("-")[::-1]
         return "-".join(dob_parts)
     
-    def _get_class(self,class_str: str)-> int:
+    def _get_class(self, class_str: str) -> int:
         """
         Convert a string like 'Class 9' (with optional leading/trailing spaces)
         into the integer 9.
+
+        Returns 0 if the format is anything other than 'Class <number>'.
         """
-        class_str = class_str.strip()
-        return int(class_str.split()[-1])
+        match = re.fullmatch(r"\s*Class\s+(\d+)\s*", class_str)
+        if not match:
+            return 0
+
+        return int(match.group(1))
+
+    def _filterByClass(self, class_no: int):
+        """
+        Select a class from dropdown and click Search.
+        """
+
+        logging.info(f"Filtering for Class {class_no}")
+
+        self.page.locator("#screeningClassFilter").select_option(str(class_no))
+
+        self.page.get_by_role(
+            "button",
+            name="Search",
+            exact=True
+        ).click()
 
 
     def _getAllChild(self) -> list[ExistingChildResult]:
@@ -214,81 +234,101 @@ class ExistingChildrenWithoutData:
 
         ## Step 0 : Get number of pages, in pagination, that times I need to loop and click 'next' button
         all_child_results = []
-        pages = self._getNumberOfPages()
-        logging.info(f"Got number of pages as {pages}")
-        logging.info(f"Got existing limit as : {self.existing_limit}")
-        logging.info(f"Got class range from class : {self.class_range.from_class} to {self.class_range.to_class}")
+
+        if (
+            self.institution_type == InstitutionType.SCHOOL.value
+            and self.class_range is not None
+        ):
+            class_list = range(
+                self.class_range.from_class,
+                self.class_range.to_class + 1
+            )
+        else:
+            class_list = [None]
+
         curr_count = 0
-        for curr_page in range(1, pages + 1):
+        
+        for current_class in class_list:
+            if current_class is not None:
+                self._filterByClass(class_no=current_class)
 
-            if curr_count >= self.existing_limit:
-                break
-
-            logging.info(f"Moving to page {curr_page}")
-
-            self._goToPage(curr_page)
-
-            all_children = self._getAllChild()
-
-            eligible_children = self._eligibleChildren(all_children)
-
-            # logging.info(
-            #     "Eligible children:\n%s",
-            #     "\n".join(
-            #         f"  - Name: {c.name}, Age: {get_age(c.dob)}, Class: {c.child_class}, "
-            #         f"DOB: {c.dob}, Gender: {c.gender}"
-            #         for c in eligible_children
-            #     ) or "  None"
-            # )
-
-            for child in eligible_children:
+            pages = self._getNumberOfPages()
+            logging.info(f"Got number of pages as {pages}")
+            logging.info(f"Got existing limit as : {self.existing_limit}")
+            if self.class_range:
+                logging.info(f"Got class range from class : {self.class_range.from_class} to {self.class_range.to_class}")
+            else:
+                logging.info(f"No class range is given")
+                    
+            for curr_page in range(1, pages + 1):
+            
                 if curr_count >= self.existing_limit:
                     break
-
-                try:
-                    pass
-
-                    childFactory = ChildFactory(
-                        child=child,
-                        defaultContactNumber=self.mobileNumber,
-                        address=self.address
-                    )
-
-                    created_child = childFactory.createChild()
-                    child_result = ChildRunResult(child=created_child,stage=WorkflowStage.PERSONAL_DETAILS, child_type=ChildType.EXISTING_CHILD_WITHOUT_DATA)
-
-                    child_screening = ChildScreeningPage(
-                        page=self.page,
-                        child=created_child,
-                        job_id=self.job_id,
-                        synchronizer=self.synchronizer,
-                        count_manager=self.count_manager,
-                        selected_mapping=self.selected_mapping,
-                        institution_type=self.institution_type
-                        
-                    )
-                    child_result.stage = WorkflowStage.HEALTH_DETAILS
-                    # NO locator needed now
-                    final_child_result = child_screening.saveExistingChild(existing_child_result=child_result)
-                    if final_child_result.feedback.outcome == FeedbackOutcome.SUCCESS:
-                        curr_count += 1
-
-                    all_child_results.append(final_child_result)
-
-                    logging.info(
-                        f"Saved child {child.name}"
-                    )
-
-                    # IMPORTANT
-                    # website reset to page 1 after save
-                    # so return back to current page
-                    self._goToPage(curr_page)
-        
-
-                except Exception as e:
-
-                    logging.exception(
-                        f"Error saving child {child.name}: {e}"
-                    )
-
+            
+                logging.info(f"Moving to page {curr_page}")
+            
+                self._goToPage(curr_page)
+            
+                all_children = self._getAllChild()
+            
+                eligible_children = self._eligibleChildren(all_children)
+            
+                logging.info(
+                    "Eligible children:\n%s",
+                    "\n".join(
+                        f"  - Name: {c.name}, Age: {get_age(c.dob)}, Class: {c.child_class}, "
+                        f"DOB: {c.dob}, Gender: {c.gender}"
+                        for c in eligible_children
+                    ) or "  None"
+                )
+            
+                for child in eligible_children:
+                    if curr_count >= self.existing_limit:
+                        break
+            
+                    try:
+            
+                        childFactory = ChildFactory(
+                            child=child,
+                            defaultContactNumber=self.mobileNumber,
+                            address=self.address
+                        )
+            
+                        created_child = childFactory.createChild()
+                        child_result = ChildRunResult(child=created_child,stage=WorkflowStage.PERSONAL_DETAILS, child_type=ChildType.EXISTING_CHILD_WITHOUT_DATA)
+            
+                        child_screening = ChildScreeningPage(
+                            page=self.page,
+                            child=created_child,
+                            job_id=self.job_id,
+                            synchronizer=self.synchronizer,
+                            count_manager=self.count_manager,
+                            selected_mapping=self.selected_mapping,
+                            institution_type=self.institution_type
+                                    
+                        )
+                        child_result.stage = WorkflowStage.HEALTH_DETAILS
+                        # NO locator needed now
+                        final_child_result = child_screening.saveExistingChild(existing_child_result=child_result)
+                        if final_child_result.feedback.outcome == FeedbackOutcome.SUCCESS:
+                            curr_count += 1
+            
+                        all_child_results.append(final_child_result)
+            
+                        logging.info(
+                            f"Saved child {child.name}"
+                        )
+            
+                        # IMPORTANT
+                        # website reset to page 1 after save
+                        # so return back to current page
+                        self._goToPage(curr_page)
+                    
+            
+                    except Exception as e:
+            
+                        logging.exception(
+                            f"Error saving child {child.name}: {e}"
+                        )
+            
         return all_child_results

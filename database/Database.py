@@ -6,6 +6,15 @@ from supabase import create_client, Client
 # 1. Load the variables from your .env file
 load_dotenv()
 
-# 2. Extract the variables into your script
-url: str = os.environ.get("SUPABASE_URL")
-key: str = os.environ.get("SUPABASE_SERVICE_KEY")
+class Database:
+    def __init__(self):
+        url = os.getenv("SUPABASE_URL")
+        key = os.getenv("SUPABASE_SERVICE_KEY")
+
+        if not url:
+            raise RuntimeError("SUPABASE_URL is missing")
+        
+        if not key:
+            raise RuntimeError("SUPABASE_SERVICE_KEY is missing")
+        
+        self.client: Client = create_client(url,key)

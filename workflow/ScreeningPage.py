@@ -429,74 +429,84 @@ class ChildScreeningPage:
 
         self.synchronizer.wait_loading(page=self.page)
 
-        healthReportFeedbackResult = self.insertHealthReport(result=child_result if existing_child_result is None else existing_child_result)
-        self._log_feedback(healthReportFeedbackResult)
-        if healthReportFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
-            ## fOR TESTING purposes
-            self.page.wait_for_timeout(5000)
-            self._skip_child()
-            if existing_child_result is None:
-                child_result.feedback = healthReportFeedbackResult
+        try:
+            healthReportFeedbackResult = self.insertHealthReport(result=child_result if existing_child_result is None else existing_child_result)
+            self._log_feedback(healthReportFeedbackResult)
+            if healthReportFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
+                ## fOR TESTING purposes
+                self.page.wait_for_timeout(5000)
+                self._skip_child()
+                if existing_child_result is None:
+                    child_result.feedback = healthReportFeedbackResult
+                else:
+                    existing_child_result.feedback = healthReportFeedbackResult
+            
+                return child_result if existing_child_result is None else existing_child_result
+            # self.page.wait_for_timeout(1500)
+            
+            if existing_child_result:
+                existing_child_result.stage = WorkflowStage.FINAL_SUBMIT
             else:
-                existing_child_result.feedback = healthReportFeedbackResult
-
-            return child_result if existing_child_result is None else existing_child_result
-        # self.page.wait_for_timeout(1500)
-
-        if existing_child_result:
-            existing_child_result.stage = WorkflowStage.FINAL_SUBMIT
-        else:
-            child_result.stage = WorkflowStage.FINAL_SUBMIT
-
-        mobileNumberField = self.page.locator(
-        'input[placeholder="Enter Mobile"]'
-        )
-
-        if mobileNumberField.is_visible(timeout=1500):
-            mobileNumberField.fill(
-                self.child.mobileNumber
+                child_result.stage = WorkflowStage.FINAL_SUBMIT
+            
+            mobileNumberField = self.page.locator(
+            'input[placeholder="Enter Mobile"]'
             )
-        else:
-            logging.info(
-            "Mobile field absent. Skipping."
+            
+            if mobileNumberField.is_visible(timeout=1500):
+                mobileNumberField.fill(
+                    self.child.mobileNumber
+                )
+            else:
+                logging.info(
+                "Mobile field absent. Skipping."
+                )
+            
+            confirmClickBtn = self.page.get_by_role(
+                "button",
+                name="Confirm & Submit"
             )
-
-        confirmClickBtn = self.page.get_by_role(
-            "button",
-            name="Confirm & Submit"
-        )
-
-        confirmClickBtn.click()
-
-        self.synchronizer.wait_loading(page=self.page)
-        # self.page.wait_for_timeout(1500)
-        button_name = (
-            "+ Add New Child"
-            if self.institution_type == InstitutionType.AWC.value
-            else "+ Add New Student"
-        )
-        portalFeedback = PortalFeedbackDetector(self.page, success_msg="Sucessfully saved existing child's detail")
-        current_page_locator = self.page.get_by_role("heading", name="Screening Preview")
-        next_page_locator = self.page.get_by_role("button", name=button_name)
-        next_page_locator.wait_for(state="visible",timeout=1500)
-        finalFeedbackResult: FeedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
-        self._log_feedback(finalFeedbackResult)
-        if finalFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
-            self._skip_child()
+            
+            confirmClickBtn.click()
+            
+            self.synchronizer.wait_loading(page=self.page)
+            # self.page.wait_for_timeout(1500)
+            button_name = (
+                "+ Add New Child"
+                if self.institution_type == InstitutionType.AWC.value
+                else "+ Add New Student"
+            )
+            portalFeedback = PortalFeedbackDetector(self.page, success_msg="Sucessfully saved existing child's detail")
+            current_page_locator = self.page.get_by_role("heading", name="Screening Preview")
+            next_page_locator = self.page.get_by_role("button", name=button_name)
+            next_page_locator.wait_for(state="visible",timeout=1500)
+            finalFeedbackResult: FeedbackResult = portalFeedback.check(current_screen_target=current_page_locator, next_screen_target=next_page_locator)
+            self._log_feedback(finalFeedbackResult)
+            if finalFeedbackResult.outcome is not FeedbackOutcome.SUCCESS:
+                self._skip_child()
+                if existing_child_result is None:
+                    child_result.feedback = finalFeedbackResult
+                else:
+                    existing_child_result.feedback = finalFeedbackResult
+            
+                return child_result if existing_child_result is None else existing_child_result
+                    
             if existing_child_result is None:
                 child_result.feedback = finalFeedbackResult
             else:
                 existing_child_result.feedback = finalFeedbackResult
-
+            
             return child_result if existing_child_result is None else existing_child_result
+        except Exception:
+            self._skip_child()
+            if existing_child_result:
+                existing_child_result.feedback = FeedbackResult(outcome=FeedbackOutcome.SYSTEM_ERROR, message="Internal Error happened. Moving to next child")
+                return existing_child_result
+            else:
+                child_result.feedback = FeedbackResult(outcome=FeedbackOutcome.SYSTEM_ERROR, message="Internal Error happened. Moving to next child")
+                return child_result
+
         
-        if existing_child_result is None:
-            child_result.feedback = finalFeedbackResult
-        else:
-            existing_child_result.feedback = finalFeedbackResult
-
-        return child_result if existing_child_result is None else existing_child_result
-
 
         
 

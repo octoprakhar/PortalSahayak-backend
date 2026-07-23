@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from datetime import datetime
 
 from typing import Optional,Dict
 
@@ -9,10 +8,10 @@ class User:
     The table same present as in the database, same row is present in database.
     Since data will come in stage wise, so the values which will come in later stages are all just optional
     """
-    user_id: str
-    created_at: datetime
     user_name: str
     password: str
+    user_id: Optional[str] = None
+    created_at: Optional[str] = None
     doctor_name: Optional[str] = None
     district_id: Optional[int] = None
     health_block_id: Optional[int] = None

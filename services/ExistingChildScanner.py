@@ -13,13 +13,18 @@ class ExistingChildScanner:
         self.is_awc_screening = is_awc_screening
         self.class_range = class_range
 
-    def _get_class(self,class_str: str)-> int:
-        """
-        Convert a string like 'Class 9' (with optional leading/trailing spaces)
-        into the integer 9.
-        """
-        class_str = class_str.strip()
-        return int(class_str.split()[-1])
+    def _get_class(self, class_str: str) -> int:
+            """
+            Convert a string like 'Class 9' (with optional leading/trailing spaces)
+            into the integer 9.
+    
+            Returns 0 if the format is anything other than 'Class <number>'.
+            """
+            match = re.fullmatch(r"\s*Class\s+(\d+)\s*", class_str)
+            if not match:
+                return 0
+    
+            return int(match.group(1))
     
     def _get_desired_table_present(self, table_column_names: list[str]) -> Locator|None:
         """

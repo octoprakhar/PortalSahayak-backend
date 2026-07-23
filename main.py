@@ -10,16 +10,25 @@ from websocket.WebsocketManager import WebsocketManger
 from bridge.WorkerEventBridge import WorkerEventBridge
 from all_models.ApplicationServices import ApplicationServices
 
+from database.Database import Database
+from database.repository.DatabaseUserRepository import DatabaseUserRepository
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
+
 @asynccontextmanager
 async def lifespan(app:FastAPI):
 
     loop = asyncio.get_running_loop()
-    app.state.services = ApplicationServices(event_bridge=WorkerEventBridge(event_loop=loop),websocket_manager=WebsocketManger())
+    database = Database()
+
+    user_repository = DatabaseUserRepository(
+        database=database
+    )
+    app.state.services = ApplicationServices(event_bridge=WorkerEventBridge(event_loop=loop),websocket_manager=WebsocketManger(), database=database,user_repository=user_repository)
 
     logging.info("Application started")
 
