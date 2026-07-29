@@ -1,10 +1,5 @@
-import logging
-
 from worker.MetadataProvider import MetadataProvider
 from all_models.WorkerContext import WorkerContext
-from all_models.JobMetadata import JobMetadata
-from all_models.UserMetadata import UserMetadata
-from services.JobManager import JobManager
 
 from repository.UserRepository import UserRepository
 

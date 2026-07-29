@@ -4,20 +4,16 @@ import logging
 from postgrest.exceptions import APIError
 
 
-from services.JobManager import JobManager
 from constants.job_status import JobStatus
-import random
 from all_models.InstitutionData import InstitutionData
 from constants.institution_type import InstitutionType
 
-from worker_repository.ActiveWorkerStore import ActiveWorkerStore
 from all_models.Message import Message
 from factory.WorkerFactory import WorkerFactory
 from constants.Commands import Commands
 from constants.WorkerType import WorkerType
 from websocket.WebsocketManager import WebsocketManger
 from all_models.dto.request.FacilityMappingRequest import FacilityMappingRequest
-from all_models.FacilityCatalog import FacilityCatalog
 from all_models.ClassRange import ClassRange
 from repository.UserRepository import UserRepository
 from repository.JobRepository import JobRepository

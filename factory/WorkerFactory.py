@@ -7,7 +7,6 @@ from worker.user_metadata.UserMetadataWorker import UserMetadataWorker
 from worker.facility_worker.FacilityWorker import FacilityWorker
 
 from worker.MetadataProvider import MetadataProvider
-from worker_metadata_providers.FileMetadataProvider import FileMetadataProvider
 from worker_metadata_providers.DatabaseMetadataProvider import DatabaseMetadataProvider
 from worker_repository.ActiveWorkerStore import ActiveWorkerStore
 from worker.EventListnerAbstract import EventListnerAbstract

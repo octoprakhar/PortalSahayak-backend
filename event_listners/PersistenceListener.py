@@ -1,12 +1,6 @@
-from zoneinfo import ZoneInfo
-from datetime import datetime
-
 from worker.EventListnerAbstract import EventListnerAbstract
-from services.JobManager import JobManager
 
-from all_models.JobLogs import JobLog
 from all_models.WorkerEvent import WorkerEvent
-from constants.log_type import LogType
 from constants.Events import Events
 from constants.job_status import JobStatus
 from repository.UserRepository import UserRepository
@@ -20,17 +14,10 @@ class PersistenceListener(EventListnerAbstract):
     """
     def __init__(self, event_bridge, userRepository: UserRepository, jobRepository: JobRepository, user_id: str, job_id: str | None):
         super().__init__(event_bridge)
-        self.job_manager = JobManager()
         self.user_repository = userRepository
         self.job_repository = jobRepository
         self.user_id = user_id
         self.job_id = job_id
-
-    # def _add_log(self,message: str, type:LogType, job_id : str):
-    #     jobLog = JobLog(timeStamp=datetime.now(
-    #                     ZoneInfo("Asia/Kolkata")
-    #                 ).isoformat(),message=message,type=type)
-    #     JobManager.add_log(job_id=job_id, log=jobLog)
 
     def _update_job_status(self, newStatus: JobStatus, job_id: str):
         self.job_repository.update_job_status(job_id=job_id, new_status=newStatus)
@@ -59,7 +46,6 @@ class PersistenceListener(EventListnerAbstract):
         if event.event == Events.REGISTRATION_METADATA_FETCHED:
             # self._add_log(message="User registration metadata fetched.",type=LogType.SUCCESS,job_id=event.job_id)
             ## Save registration metadata using jobmanager
-            # self.job_manager.upload_user_registration_metadata(job_id=event.job_id,user_registration_metadata=event.payload["registrationMetadata"])
             self.user_repository.update_registration_metadata(user_id=self.user_id,registrationMetadata=event.payload["registrationMetadata"])
 
 
@@ -77,7 +63,6 @@ class PersistenceListener(EventListnerAbstract):
         if event.event == Events.FACILITY_CATALOG_FETCHED:
             ## TODO: save this fetched facility with user id, to the db
             ## For now saving it inside jobs/job_id/catalog.json
-            # self.job_manager.store_facility_catalog(job_id=event.job_id,facility_catalog=event.payload["facility_catalog"])
             self.user_repository.update_full_facility_catalog(user_id=self.user_id,full_facility_catalog=event.payload["facility_catalog"])
 
 
@@ -94,5 +79,4 @@ class PersistenceListener(EventListnerAbstract):
         
         if event.event == Events.USER_AUTHENTICATION_FAILED:
             ### Remove the whole job related persistant data
-            # JobManager.clean_job(job_id=event.job_id)
             pass

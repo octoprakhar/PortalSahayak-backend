@@ -1,5 +1,4 @@
 from all_models.ChildRunResult import ChildRunResult
-from services.JobManager import JobManager
 
 
 class ReportCreator:
@@ -33,5 +32,4 @@ class ReportCreator:
 
         ## Create both the csv files for now.
 
-        success_path, failure_path = JobManager.save_success_and_failure_files(job_id=self.job_id,success_rows=self.success_results,failure_rows=self.failure_results)
-        return success_path,failure_path
+        pass
