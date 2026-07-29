@@ -160,6 +160,7 @@ class DiseaseManager:
                     if not disease_rule.validate(disease=disease, context=disease_context):
                         logging.info("This disease has not cleared validation test, so getting the removal strategy")
                         removal_strategy: DiseaseRemovalStrategy = self.disease_removal_repo.get_strategy_by_disease_name(disease.definition.name)
+                        # logging.info(f"Got removal strategy as: {removal_strategy}")
                         # print(f"Got removal strategy as {removal_strategy}")
                         is_disease_removed = removal_strategy.remove(disease=disease,page=self.page,synchronizer=self.synchronizer)
                         if not is_disease_removed:

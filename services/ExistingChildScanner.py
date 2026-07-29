@@ -165,7 +165,7 @@ class ExistingChildScanner:
                     # print(f"Got this row as eligible row: \n{row.inner_text()}")
                     ## Check whether class range is present, if class range is present, then just check for that if class range is present
                     if self.class_range:
-                        # logging.info("Got class range")
+                        logging.info(f"Got class range: {self.class_range}")
                         
                         if self._is_child_in_class_range_present(table_row=row, target_col_idx=class_range_idx):
                             # logging.info(f"Child: \n{row.inner_text()}\nis present in the given class range")

@@ -1,5 +1,6 @@
 from abc import abstractmethod, ABC
 from playwright.sync_api import Page
+import logging
 
 
 from disease.strategy.removal_strategies.DiseaseRemovalStrategy import DiseaseRemovalStrategy
@@ -34,10 +35,14 @@ class ValueRemovalStrategy(DiseaseRemovalStrategy,ABC):
         manipulator = DiseaseManipulator(page, synchronizer)
         while attempts < self.MAX_ATTEMPTS:
 
+            # logging.info(f"Attempt {attempts}")
+
             if not self._disease_still_present(disease=disease,page=page):
+                # logging.info("Disease is not present")
                 return True
 
             if self.reach_limit(manipulator=manipulator):
+                # logging.info("Limit got reached")
                 break
 
             self.adjust_value(manipulator=manipulator)

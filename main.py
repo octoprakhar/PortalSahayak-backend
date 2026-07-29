@@ -12,6 +12,7 @@ from all_models.ApplicationServices import ApplicationServices
 
 from database.Database import Database
 from database.repository.DatabaseUserRepository import DatabaseUserRepository
+from database.repository.DatabaseJobRepository import DatabaseJobRepository
 
 logging.basicConfig(
     level=logging.INFO,
@@ -28,7 +29,10 @@ async def lifespan(app:FastAPI):
     user_repository = DatabaseUserRepository(
         database=database
     )
-    app.state.services = ApplicationServices(event_bridge=WorkerEventBridge(event_loop=loop),websocket_manager=WebsocketManger(), database=database,user_repository=user_repository)
+
+    job_repository = DatabaseJobRepository(database=database)
+
+    app.state.services = ApplicationServices(event_bridge=WorkerEventBridge(event_loop=loop),websocket_manager=WebsocketManger(), database=database,user_repository=user_repository, job_repository=job_repository)
 
     logging.info("Application started")
 

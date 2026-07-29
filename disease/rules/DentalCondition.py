@@ -10,4 +10,5 @@ class DentalConditionRule(DiseaseRule):
         if not age:
             return False
 
-        return current < max_count and age > 5
+        # return current < max_count and age > 5 and disease.definition.name == context.child.diseaseName
+        return age > 5 and disease.definition.name == context.child.diseaseName

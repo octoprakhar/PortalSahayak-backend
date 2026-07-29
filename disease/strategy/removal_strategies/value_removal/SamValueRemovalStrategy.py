@@ -1,11 +1,13 @@
+import logging
+
 from disease.strategy.removal_strategies.value_removal.ValueRemovalStrategy import ValueRemovalStrategy
 
 
 class SamValueRemovalStrategy(ValueRemovalStrategy):
     def __init__(self):
         super().__init__()
-        self.MAX_WEIGHT = 18
-        self.MAX_HEIGHT = 110
+        self.MAX_WEIGHT = 70
+        self.MAX_HEIGHT = 170
 
     def _is_height_reached_limit(self,current_height: float) -> bool:
         return current_height > self.MAX_HEIGHT
@@ -17,6 +19,9 @@ class SamValueRemovalStrategy(ValueRemovalStrategy):
     def adjust_value(self, manipulator):
         current_height = manipulator.get_height()
         current_weight = manipulator.get_weight()
+
+        # logging.info(f"Got data as height: {current_height}, and weight: {current_weight}")
+        
         if not self._is_height_reached_limit(current_height=current_height) and not self._is_weight_reached_limit(current_weight=current_weight):
             ## Update both
             manipulator.set_weight(str(current_weight + 0.5))

@@ -9,6 +9,8 @@ from all_models.WorkerEvent import WorkerEvent
 from constants.log_type import LogType
 from constants.Events import Events
 from constants.job_status import JobStatus
+from repository.UserRepository import UserRepository
+from repository.JobRepository import JobRepository
 
 class PersistenceListener(EventListnerAbstract):
 
@@ -16,18 +18,22 @@ class PersistenceListener(EventListnerAbstract):
     This event listner does all the works, from creating the report, adding logs, updating status etc. 
     I mean all types of work related to database/file management. It will handle all types of persistant work.
     """
-    def __init__(self, event_bridge):
+    def __init__(self, event_bridge, userRepository: UserRepository, jobRepository: JobRepository, user_id: str, job_id: str | None):
         super().__init__(event_bridge)
         self.job_manager = JobManager()
+        self.user_repository = userRepository
+        self.job_repository = jobRepository
+        self.user_id = user_id
+        self.job_id = job_id
 
-    def _add_log(self,message: str, type:LogType, job_id : str):
-        jobLog = JobLog(timeStamp=datetime.now(
-                        ZoneInfo("Asia/Kolkata")
-                    ).isoformat(),message=message,type=type)
-        JobManager.add_log(job_id=job_id, log=jobLog)
+    # def _add_log(self,message: str, type:LogType, job_id : str):
+    #     jobLog = JobLog(timeStamp=datetime.now(
+    #                     ZoneInfo("Asia/Kolkata")
+    #                 ).isoformat(),message=message,type=type)
+    #     JobManager.add_log(job_id=job_id, log=jobLog)
 
     def _update_job_status(self, newStatus: JobStatus, job_id: str):
-        JobManager.update_job_status(status=newStatus, job_id=job_id)
+        self.job_repository.update_job_status(job_id=job_id, new_status=newStatus)
 
 
     def handle(self, event:WorkerEvent):
@@ -38,20 +44,23 @@ class PersistenceListener(EventListnerAbstract):
             message = payload["message"]
             logType = payload["logType"]
 
-            self._add_log(message=message,type=logType,job_id=job_id)
+
+            # self._add_log(message=message,type=logType,job_id=job_id)
+            pass
 
         if event.event == Events.WORKER_STARTED:
             self._update_job_status(newStatus=JobStatus.LOGGING_IN,job_id=event.job_id)
-            self._add_log(message="Work started, waiting for login in",type=LogType.SUCCESS, job_id=event.job_id)
+            # self._add_log(message="Work started, waiting for login in",type=LogType.SUCCESS, job_id=event.job_id)
 
         if event.event == Events.LOGIN_COMPLETED:
             self._update_job_status(newStatus=JobStatus.WAITING_INSTITUTION, job_id=event.job_id)
-            self._add_log(message="Logged in succesfully, Waiting for institution to get selected", type=LogType.SUCCESS, job_id=event.job_id)
+            # self._add_log(message="Logged in succesfully, Waiting for institution to get selected", type=LogType.SUCCESS, job_id=event.job_id)
 
         if event.event == Events.REGISTRATION_METADATA_FETCHED:
-            self._add_log(message="User registration metadata fetched.",type=LogType.SUCCESS,job_id=event.job_id)
+            # self._add_log(message="User registration metadata fetched.",type=LogType.SUCCESS,job_id=event.job_id)
             ## Save registration metadata using jobmanager
-            self.job_manager.upload_user_registration_metadata(job_id=event.job_id,user_registration_metadata=event.payload["registrationMetadata"])
+            # self.job_manager.upload_user_registration_metadata(job_id=event.job_id,user_registration_metadata=event.payload["registrationMetadata"])
+            self.user_repository.update_registration_metadata(user_id=self.user_id,registrationMetadata=event.payload["registrationMetadata"])
 
 
         if event.event == Events.JOB_FAILED:
@@ -68,7 +77,8 @@ class PersistenceListener(EventListnerAbstract):
         if event.event == Events.FACILITY_CATALOG_FETCHED:
             ## TODO: save this fetched facility with user id, to the db
             ## For now saving it inside jobs/job_id/catalog.json
-            self.job_manager.store_facility_catalog(job_id=event.job_id,facility_catalog=event.payload["facility_catalog"])
+            # self.job_manager.store_facility_catalog(job_id=event.job_id,facility_catalog=event.payload["facility_catalog"])
+            self.user_repository.update_full_facility_catalog(user_id=self.user_id,full_facility_catalog=event.payload["facility_catalog"])
 
 
         if event.event == Events.INSTITUTION_SELECTED:
@@ -84,4 +94,5 @@ class PersistenceListener(EventListnerAbstract):
         
         if event.event == Events.USER_AUTHENTICATION_FAILED:
             ### Remove the whole job related persistant data
-            JobManager.clean_job(job_id=event.job_id)
+            # JobManager.clean_job(job_id=event.job_id)
+            pass

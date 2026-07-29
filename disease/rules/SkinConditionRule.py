@@ -6,4 +6,5 @@ class SkinConditionRule(DiseaseRule):
         current = context.current_counts.get("Skin Conditions",0)
         max_count = context.max_counts.get("Skin Conditions",99999)
         age = get_age(context.child.dob)
-        return current < max_count and age < 6
+        # return current < max_count and age < 6 and disease.definition.name == context.child.diseaseName
+        return age < 6 and disease.definition.name == context.child.diseaseName

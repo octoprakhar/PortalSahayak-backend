@@ -149,5 +149,5 @@ def test_remove_user():
 
 
 if __name__ == "__main__":
-    # test_update_selected_facility()
-    test_remove_user()
+    test_update_selected_facility()
+    # test_remove_user()

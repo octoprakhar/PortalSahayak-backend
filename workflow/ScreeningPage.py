@@ -52,12 +52,14 @@ class ChildScreeningPage:
             field.select_option(label=str(value))
 
     def _fill_bp_if_visible(self):
+        # logging.info('Started entering bp')
         field = self.page.locator('[name="bloodPressureValue"]')
-        if field.count() > 0 and field.is_visible() and self.institution_type == "school":
+        if field.count() > 0 and field.is_visible() and self.institution_type == InstitutionType.SCHOOL:
+            # logging.info(f"Got bp field, and child bp is {self.child.bloodPressure}")
             field.fill(str(self.child.bloodPressure))
             field.press("Tab")  # Move focus away to trigger blur/change
             self.synchronizer.wait_for_setting_blood_pressure(page=self.page)
-        elif field.count() > 0 and field.is_visible() and self.institution_type == "awc":
+        elif field.count() > 0 and field.is_visible() and self.institution_type == InstitutionType.AWC:
             field.fill("90/60")
             field.press("Tab")  # Move focus away to trigger blur/change
             self.synchronizer.wait_for_setting_blood_pressure(page=self.page)
@@ -473,7 +475,7 @@ class ChildScreeningPage:
             # self.page.wait_for_timeout(1500)
             button_name = (
                 "+ Add New Child"
-                if self.institution_type == InstitutionType.AWC.value
+                if self.institution_type == InstitutionType.AWC
                 else "+ Add New Student"
             )
             portalFeedback = PortalFeedbackDetector(self.page, success_msg="Sucessfully saved existing child's detail")
@@ -554,7 +556,7 @@ class ChildScreeningPage:
             # self.page.wait_for_timeout(1500)
             button_name = (
                 "+ Add New Child"
-                if self.institution_type == InstitutionType.AWC.value
+                if self.institution_type == InstitutionType.AWC
                 else "+ Add New Student"
             )
             portalFeedback = PortalFeedbackDetector(self.page, success_msg="Child finally saved succesfully.")

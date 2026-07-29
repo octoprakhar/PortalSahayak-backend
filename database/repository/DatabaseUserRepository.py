@@ -1,3 +1,5 @@
+from dataclasses import asdict
+
 from repository.UserRepository import UserRepository
 
 from database.Database import Database
@@ -53,6 +55,9 @@ class DatabaseUserRepository(UserRepository):
             state_id=row.get("state_id"),
             mht_code=row.get("mht_code"),
             selected_facility=row.get("selected_facility"),
+            full_facility_catalog=(
+    row.get("full_facility_catalog") or {}
+).get("facilities_by_type")
         )
     
     def get_by_username(self, username):
@@ -80,6 +85,7 @@ class DatabaseUserRepository(UserRepository):
             state_id=row.get("state_id"),
             mht_code=row.get("mht_code"),
             selected_facility=row.get("selected_facility"),
+            full_facility_catalog=row.get("full_facility_catalog").get("facilities_by_type")
         )
     
     def update_registration_metadata(self, user_id, registrationMetadata):
@@ -122,6 +128,25 @@ class DatabaseUserRepository(UserRepository):
         if not response.data:
             raise Exception(f"User with id '{user_id}' not found.")
 
+        return response.data[0]["user_id"]
+
+    def update_full_facility_catalog(self, user_id, full_facility_catalog):
+        response = (
+                    self.db.client
+                    .table("User")
+                    .update(
+                        {
+                            "full_facility_catalog": asdict(full_facility_catalog),
+                        }
+                    )
+                    .eq("user_id", user_id)
+                    .select()
+                    .execute()
+                )
+        
+        if not response.data:
+            raise Exception(f"User with id '{user_id}' not found.")
+        
         return response.data[0]["user_id"]
     
     def remove_user_by_id(self, user_id):

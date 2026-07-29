@@ -44,6 +44,12 @@ class UserRepository(ABC):
         """
 
     @abstractmethod
+    def update_full_facility_catalog(self, user_id: str, full_facility_catalog: Dict[str,str]) -> str:
+        """
+        All the facilities type with name, and fetched date as json data to save
+        """
+
+    @abstractmethod
     def remove_user_by_id(self,user_id: str)-> bool:
         """
         Removes the user with id. And then return the boolean whether removes the True/False.

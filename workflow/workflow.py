@@ -34,9 +34,9 @@ class ScreeningWorkflow:
         self.existing_limit = existing_limit
 
 
-    def run(self, excel_path, defaultContactNum: str, address: str = ""):
+    def run(self, file_url, defaultContactNum: str, address: str = ""):
         logging.info("Data Loading started")
-        children = self.loader.loadData(excel_path,defaultContactNum,address)
+        children = self.loader.loadData(file_url,defaultContactNum,address)
 
         new_child_disease_manager = DiseaseCountFactory().create(max_len=len(children))
 
@@ -98,7 +98,7 @@ class ScreeningWorkflow:
         
         ## Let's enter the existing child, that are not present in dataset given
         logging.info("📢📢📢📢📢📢📢📢📢📢 Starting with Existing children📢📢📢📢📢📢📢📢📢📢📢📢📢📢📢📢")
-        scanner = ExistingChildScanner(page=self.page, is_awc_screening= self.institution_type == "awc", class_range= self.class_range if self.institution_type == "school" else None)
+        scanner = ExistingChildScanner(page=self.page, is_awc_screening= self.institution_type == "awc", class_range= self.class_range)
         total_existing = scanner.get_total_existing_student()
 
         existing_limit = min(

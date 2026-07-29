@@ -3,4 +3,4 @@ from typing import Dict
 
 class FacilityMappingRequest(BaseModel):
     selected_facility: Dict[str, str]
-    job_id: str
+    user_id: str

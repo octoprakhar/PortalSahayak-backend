@@ -5,6 +5,8 @@ import pandas as pd
 import logging
 import re
 import numpy as np
+import requests
+from io import BytesIO
 
 
 from all_models.child_models import Child 
@@ -39,6 +41,16 @@ class ChildLoader:
         except Exception as e:
             logging.error(f"Failed to load csv: {e}")
             raise
+
+    def loadViaUrl(self, url: str) -> pd.DataFrame:
+        response = requests.get(url, timeout=30)
+
+        if response.status_code != 200:
+            raise RuntimeError(
+                f"Failed to download file. Status Code: {response.status_code}"
+            )
+
+        return pd.read_csv(BytesIO(response.content))
     
     
     def clean_column_name(self,col:str):
@@ -166,7 +178,9 @@ class ChildLoader:
     def loadData(self,url,defaultContactNum:str,address:str)-> list[Child]:
         ## Load it
         logging.info("🧐 Data started loading")
-        df = self.loadViaCsv(url)
+        # df = self.loadViaCsv(url)
+
+        df = self.loadViaUrl(url=url)
 
         logging.info("-----------Data cleaning started-------------------")
         cleaned_df = self.clean_df(df,defaultContactNum,address=address)

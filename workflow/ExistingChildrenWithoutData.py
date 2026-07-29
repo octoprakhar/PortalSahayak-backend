@@ -20,7 +20,7 @@ from all_models.FeedbackResult import FeedbackOutcome
 from constants.institution_type import InstitutionType
 
 class ExistingChildrenWithoutData:
-    def __init__(self, mobileNumber:str, page:Page,address:str, count_manager: DiseaseCountManager, selected_mapping: dict[str,str], max_children_count: int,institution_type: str, existing_limit: int, class_range: ClassRange = None, job_id: str = None, synchronizer : PageSynchronizer = None):
+    def __init__(self, mobileNumber:str, page:Page,address:str, count_manager: DiseaseCountManager, selected_mapping: dict[str,str], max_children_count: int,institution_type: InstitutionType, existing_limit: int, class_range: ClassRange = None, job_id: str = None, synchronizer : PageSynchronizer = None):
         self.mobileNumber = mobileNumber
         self.page = page
         self.address = address
@@ -171,7 +171,7 @@ class ExistingChildrenWithoutData:
             isStartScreeningButtonPresent = not bool(health_status)
             child_class = None
 
-            if self.institution_type == "school":
+            if self.institution_type == InstitutionType.SCHOOL:
                 child_class_str = get_cell("Class")
                 child_class = self._get_class(class_str=child_class_str)
 
@@ -211,11 +211,12 @@ class ExistingChildrenWithoutData:
             if not child.isStartScreeningButtonPresent:
                 continue
 
-            if self.institution_type == InstitutionType.AWC.value:
+            if self.institution_type == InstitutionType.AWC:
                 if age < 6:
                     eligibleChildren.append(child)
 
-            elif self.institution_type == InstitutionType.SCHOOL.value:
+            elif self.institution_type == InstitutionType.SCHOOL:
+                logging.info(f"Got school child. And child details are like this {child.child_class} and it's type is {type(child.child_class)}")
                 if age >= 19:
                     continue
 
@@ -235,10 +236,13 @@ class ExistingChildrenWithoutData:
         ## Step 0 : Get number of pages, in pagination, that times I need to loop and click 'next' button
         all_child_results = []
 
+        logging.info(f"In initial of existing child without data, current class range is {self.class_range}")
+
         if (
-            self.institution_type == InstitutionType.SCHOOL.value
+            self.institution_type == InstitutionType.SCHOOL
             and self.class_range is not None
         ):
+            logging.info(f"Institution type is school and class range in not none")
             class_list = range(
                 self.class_range.from_class,
                 self.class_range.to_class + 1
@@ -249,8 +253,12 @@ class ExistingChildrenWithoutData:
         curr_count = 0
         
         for current_class in class_list:
+            logging.info(f"Got current class as: {current_class}, and type is {type(current_class)}")
             if current_class is not None:
+                logging.info(f"Current class is not none it is : {current_class}, and type is {type(current_class)}")
                 self._filterByClass(class_no=current_class)
+            else:
+                logging.info("Current class is none")
 
             pages = self._getNumberOfPages()
             logging.info(f"Got number of pages as {pages}")

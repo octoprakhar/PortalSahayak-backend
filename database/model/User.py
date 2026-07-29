@@ -18,3 +18,4 @@ class User:
     state_id: Optional[int] = None
     mht_code: Optional[int] = None
     selected_facility: Optional[Dict[str,str]] = None
+    full_facility_catalog : Optional[Dict[str,str]] = None
