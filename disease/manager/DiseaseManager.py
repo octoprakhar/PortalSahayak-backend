@@ -22,6 +22,7 @@ from disease.strategy.adding_strategies.DiseaseAdditionStrategy import DiseaseAd
 from disease.factory.DiseaseRepositoryFactory import DiseaseRepositoryFactory
 from disease.repository.DiseaseVariantRegistry import DiseaseVariantRegistry
 
+from constants.institution_type import InstitutionType
 from services.PageSynchronizer import PageSynchronizer
 
 from utils.loaderUtils import get_age
@@ -80,7 +81,7 @@ class DiseaseManager:
 
 
 
-    def manage(self, child:Child, institution_type: str) -> list[DetectedDisease]:
+    def manage(self, child:Child, institution_type: InstitutionType) -> list[DetectedDisease]:
         """
         It manages all the diseases regarding a specific child
         """

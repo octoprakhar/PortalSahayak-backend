@@ -1,6 +1,7 @@
 from disease.rules.DiseaseRule import DiseaseRule
 
 from utils.loaderUtils import get_age
+from constants.institution_type import InstitutionType
 
 class SamRule(DiseaseRule):
     """
@@ -18,4 +19,4 @@ class SamRule(DiseaseRule):
 
         is_current_count_less = current_count < max_count
 
-        return not child_disease.strip() and is_current_count_less and context.institution_type != "school"
+        return not child_disease.strip() and is_current_count_less and context.institution_type != InstitutionType.SCHOOL

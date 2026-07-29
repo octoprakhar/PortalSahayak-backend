@@ -11,6 +11,7 @@ from all_models.FeedbackResult import FeedbackResult,FeedbackOutcome
 from all_models.ChildProcessingResult import ChildProcessingResult
 from constants.log_type import LogType
 from constants.ChildType import ChildType
+from constants.institution_type import InstitutionType
 from all_models.ChildRunResult import ChildRunResult
 from all_models.ClassRange import ClassRange
 
@@ -21,7 +22,7 @@ from services.ExistingChildScanner import ExistingChildScanner
 
 
 class ScreeningWorkflow:
-    def __init__(self, page:Page,report_creator: ReportCreator, selected_mapping: dict[str,str], institution_type: str, existing_limit: int, logger:Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None, class_range : ClassRange = None ):
+    def __init__(self, page:Page,report_creator: ReportCreator, selected_mapping: dict[str,str], institution_type: InstitutionType, existing_limit: int, logger:Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None, class_range : ClassRange = None ):
         self.page = page
         self.loader = ChildLoader()
         self.job_id = job_id

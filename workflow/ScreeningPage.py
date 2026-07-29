@@ -29,7 +29,7 @@ from facility.rule.FacilityMappingRule import FacilityMappingRule
 
 
 class ChildScreeningPage:
-    def __init__(self, page:Page, child:Child, count_manager: DiseaseCountManager,selected_mapping: dict[str,str], institution_type: str, logger: Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None):
+    def __init__(self, page:Page, child:Child, count_manager: DiseaseCountManager,selected_mapping: dict[str,str], institution_type: InstitutionType, logger: Callable[[str,LogType],None] = None, job_id: str = None, synchronizer: PageSynchronizer = None):
         self.page = page
         self.child = child
         self.job_id = job_id

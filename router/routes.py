@@ -1,4 +1,5 @@
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException, WebSocket,Request
+from fastapi.responses import JSONResponse
 from typing import Optional
 import logging
 from postgrest.exceptions import APIError
@@ -31,7 +32,7 @@ ws_manager = WebsocketManger()
 async def get_users():
     return {"status": "ok"}
 
-@router.post("/register-signin-user")
+@router.post("/register-user")
 async def register_job(
     request: Request,
     userName: Optional[str] = Form(None),
@@ -89,13 +90,45 @@ async def register_job(
         raise HTTPException(status_code=500,detail="Internal error occured.")
 
 
-@router.post("signin-user")
-async def signin_user():
-    #step 1: check for database
-    # if ready, then send send success
+@router.post("/signin-user")
+async def signin_user(request: Request,userName: Optional[str] = Form(None),
+    password: Optional[str] = Form(None)):
 
-    #step 2: Start with validating username and password, and send the userID
-    pass
+    if not userName or not userName.strip():
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "UserName is required"},
+        )
+    
+    if not password or not password.strip():
+        return JSONResponse(
+            status_code=400,
+            content={"detail": "Password is required"},
+        )
+    #step 1: check for database
+    services = request.app.state.services
+    user_repository: UserRepository = services.user_repository
+    # if ready, then send send success
+    try:
+        user = user_repository.get_by_username(username=userName)
+        if not user:
+            return JSONResponse(
+                status_code=404,
+                content={"detail": "Invalid username or password"},
+            )
+        if password != user.password:
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Invalid username or password"},
+            )
+
+        return JSONResponse(
+            status_code=200,
+            content={"user_id": user.user_id},
+        )
+    except Exception as e:
+        logging.exception(str(e))
+        raise HTTPException(status_code=500,detail="Internal error occured.")
     
 @router.post("/map-facility")
 async def map_facility(data: FacilityMappingRequest,request:Request):
