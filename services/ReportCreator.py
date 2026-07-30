@@ -1,4 +1,9 @@
+from pathlib import Path
+import csv
+
 from all_models.ChildRunResult import ChildRunResult
+from all_models.ReportFiles import ReportFiles
+from utils.persistantUtils import to_report_row
 
 
 class ReportCreator:
@@ -12,6 +17,30 @@ class ReportCreator:
         self.job_id = job_id
         self.failure_results: list[ChildRunResult] = []
         self.success_results: list[ChildRunResult] = []
+        self.REPORT_COLUMNS = [
+            "Name",
+            "DOB",
+            "Father Name",
+            "Mother Name",
+            "Mobile",
+            "Gender",
+            "Address",
+            "Child Type",
+            "Original Height",
+            "Final Height",
+            "Original Weight",
+            "Final Weight",
+            "Original HB",
+            "Final HB",
+            "Original Head Circumference",
+            "Final Head Circumference",
+            "Original Disease",
+            "Final Disease",
+            "Stage",
+            "Status",
+            "Message",
+            "Validation Errors",
+        ]
 
     def add_success(self,child_result: ChildRunResult)-> None:
         """
@@ -25,11 +54,45 @@ class ReportCreator:
         """
         self.failure_results.append(child_result)
 
-    def flush(self)-> tuple[str,str]:
+    def _write_csv(self,path: Path, results: list[ChildRunResult]) -> None:
         """
-        It will give out two csv or excel any file, when event listner calls it, for that id.
+        THis will help in writing ChildRunResult in csv
         """
 
-        ## Create both the csv files for now.
+        rows = [to_report_row(result=result) for result in results]
 
-        pass
+        ## If there are not rows, we will still create file with headers
+        with path.open("w",newline="",encoding="utf-8") as csvfile:
+            writer = csv.DictWriter(csvfile,fieldnames=self.REPORT_COLUMNS)
+            writer.writeheader()
+
+            if rows:
+                writer.writerows(rows)
+
+    def flush(self)-> ReportFiles:
+        """
+        Creates:
+            root/
+                tmp/
+                    <job_id>/
+                        success.csv
+                        failure.csv
+        """
+
+        # Project root = directory where this file lives 
+        project_root = Path(__file__).resolve().parent.parent
+
+        report_dir = project_root / "tmp" / self.job_id / "reports"
+        report_dir.mkdir(parents=True, exist_ok=True)
+
+        success_path = report_dir / "success.csv"
+        failure_path = report_dir / "failure.csv"
+
+        self._write_csv(success_path, self.success_results)
+        self._write_csv(failure_path, self.failure_results)
+
+        return ReportFiles(
+            success_report_path=str(success_path),
+            failure_report_path=str(failure_path),
+        )
+

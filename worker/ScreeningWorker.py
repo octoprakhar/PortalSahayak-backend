@@ -88,8 +88,8 @@ class ScreeningWorker(WorkerAbstract):
         self.job_state = JobStatus.RUNNING
         runtimeManger.start_child_screening(page=self.page, institution_data=institution_data, is_ANM_Present=is_ANM_Present,screening_date=screening_date,uploaded_file_url=uploaded_file_url,address=address,mobile_number=mobile_number,report_creator=self.report_creator,selected_mapping=selected_facility, class_range=class_range, existing_limit=existing_limit)
 
-        success_path,failure_path = self.report_creator.flush()
-        self._emit_event(Events.REPORT_CREATED,payload={"success_path": success_path,"failure_path":failure_path})
+        report_files = self.report_creator.flush()
+        self._emit_event(Events.REPORT_CREATED,payload={"report_files":report_files})
     
     def _process_command(self, message):
         if message.command == Commands.START_SCREENING:

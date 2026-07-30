@@ -50,7 +50,7 @@ class WorkerFactory:
         return metadataProvider.get_context(user_id=user_id, userReposity=self.services.user_repository)
     
     def _get_default_listeners(self, user_id: str, job_id : str | None) -> list[EventListnerAbstract]:
-        return [ PrintListner(event_bridge=self.services.event_bridge),PersistenceListener(event_bridge=self.services.event_bridge, userRepository=self.services.user_repository,jobRepository=self.services.job_repository, user_id=user_id, job_id=job_id), CleanupListner(event_bridge=self.services.event_bridge), ReportListner(event_bridge=self.services.event_bridge), WebsocketListner(event_bridge=self.services.event_bridge,websocket_manager=self.services.websocket_manager, user_id=user_id), RegistrationCordinator(event_bridge=self.services.event_bridge)]
+        return [ PrintListner(event_bridge=self.services.event_bridge),PersistenceListener(event_bridge=self.services.event_bridge, userRepository=self.services.user_repository,jobRepository=self.services.job_repository,reportRepository=self.services.report_repository, user_id=user_id, job_id=job_id), CleanupListner(event_bridge=self.services.event_bridge), ReportListner(event_bridge=self.services.event_bridge), WebsocketListner(event_bridge=self.services.event_bridge,websocket_manager=self.services.websocket_manager, user_id=user_id), RegistrationCordinator(event_bridge=self.services.event_bridge)]
 
     def _add_listners(self, worker: WorkerAbstract, user_id: str, job_id: str | None):
         listeners = self._get_default_listeners(user_id=user_id, job_id=job_id)

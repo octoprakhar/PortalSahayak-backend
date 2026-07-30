@@ -1,10 +1,17 @@
+from pathlib import Path
+import shutil
+
 from worker.EventListnerAbstract import EventListnerAbstract
 
 from all_models.WorkerEvent import WorkerEvent
+from all_models.ReportFiles import ReportFiles
+from database.model.JobReport import JobReport
 from constants.Events import Events
 from constants.job_status import JobStatus
 from repository.UserRepository import UserRepository
 from repository.JobRepository import JobRepository
+from repository.ReportRepository import ReportRepository
+
 
 class PersistenceListener(EventListnerAbstract):
 
@@ -12,10 +19,11 @@ class PersistenceListener(EventListnerAbstract):
     This event listner does all the works, from creating the report, adding logs, updating status etc. 
     I mean all types of work related to database/file management. It will handle all types of persistant work.
     """
-    def __init__(self, event_bridge, userRepository: UserRepository, jobRepository: JobRepository, user_id: str, job_id: str | None):
+    def __init__(self, event_bridge, userRepository: UserRepository, jobRepository: JobRepository, reportRepository: ReportRepository, user_id: str, job_id: str | None):
         super().__init__(event_bridge)
         self.user_repository = userRepository
         self.job_repository = jobRepository
+        self.report_repository = reportRepository
         self.user_id = user_id
         self.job_id = job_id
 
@@ -75,7 +83,21 @@ class PersistenceListener(EventListnerAbstract):
             ### TODO: The runtime manager, will give some files, like success_child list, with all the children which has correctly been screened
             ## With their disease(if randomly selected), or other things, whether it was earlier SAM and we had converted, etc. It will also send 
             ## Screening failed child, and validation failed child, we need to compile and save the report here.
+            ## Start getting the report
+            payload = event.payload
+            report_files: ReportFiles = payload.get("report_files")
+            success_file_remote_path = f"/{self.job_id}/reports/success.csv"
+            failure_file_remote_path = f"/{self.job_id}/reports/failure.csv"
+            self.report_repository.create(job_report=JobReport(success_file_remote_path=success_file_remote_path, failure_file_remote_path=failure_file_remote_path, user_id=self.user_id, job_id=self.job_id),local_temp_file=report_files)
+
             self._update_job_status(newStatus=JobStatus.COMPLETED, job_id=event.job_id)
+
+            ## REmove the temp file
+            tmp_folder = Path(report_files.success_report_path).parent.parent
+
+            if tmp_folder.exists():
+                print(f"Got temp folder as: {tmp_folder}")
+
         
         if event.event == Events.USER_AUTHENTICATION_FAILED:
             ### Remove the whole job related persistant data
