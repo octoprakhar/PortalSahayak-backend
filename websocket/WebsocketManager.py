@@ -1,5 +1,6 @@
 import asyncio
 from fastapi import WebSocket,WebSocketDisconnect
+import logging
 class WebsocketManger:
     """
     It handles every thing regarding websockets connection.
@@ -43,7 +44,10 @@ class WebsocketManger:
         """
 
         # Check if anyone is actively listening to this job_id
+        # logging.info("Entered websocket.send")
         if user_id in self.connections:
             # Send the text concurrently to all open connections under this job_id
+            # logging.info(f"About to send message: to userId: {user_id}, and payload: {payload}")
             await asyncio.gather(*[ws.send_json(payload) for ws in self.connections[user_id]])
+            # logging.info("Send completed")
     

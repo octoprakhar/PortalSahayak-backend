@@ -104,10 +104,12 @@ class WebsocketListner(EventListnerAbstract):
             self.event_bridge.dispatch(coroutine=self.websocket_manager.send(user_id=self.user_id,payload=payload))
 
         if event.event == Events.REPORT_CREATED:
+            event_files ={"success_file_path": event.payload.get("success_report_path"), "failure_report_path": event.payload.get("failure_report_path"), "log_file": event.payload.get("log_file")}
             payload = {
                 "event": event.event.value,
-                "payload": event.payload
+                "payload": event_files
             }
+            logging.info("Report crated event came in websocket listner")
             self.event_bridge.dispatch(coroutine=self.websocket_manager.send(user_id=self.user_id,payload=payload))
 
 
