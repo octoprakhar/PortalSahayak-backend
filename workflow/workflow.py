@@ -36,12 +36,15 @@ class ScreeningWorkflow:
 
 
     def run(self, file_url, defaultContactNum: str, address: str = ""):
+        logging.info(f"Got logger as: {self.logger}")
         logging.info("Data Loading started")
+        self.logger("Data Loading started",LogType.INFO)
         children = self.loader.loadData(file_url,defaultContactNum,address)
 
         new_child_disease_manager = DiseaseCountFactory().create(max_len=len(children))
 
         logging.info(f"Got new disease manager max as : {new_child_disease_manager.get_max_counts()}")
+        self.logger(f"Got new disease manager max as : {new_child_disease_manager.get_max_counts()}",LogType.INFO)
 
 
         for child in children:
@@ -54,9 +57,11 @@ class ScreeningWorkflow:
                 existingStudent: SearchResult | None = searchStudent.search()
 
                 logging.info(f"For child: {child.name}. Search result is {existingStudent}")
+                self.logger(f"For child: {child.name}. Search result is {existingStudent}",LogType.INFO)
                 
                 if existingStudent.found == True and existingStudent.eligible == True:
                     logging.info(f"🤩🤩 Child with name {child.name} already exists.")
+                    self.logger(f"🤩🤩 Child with name {child.name} already exists.",LogType.INFO)
                     existingStudentResult = screening.saveExistingChild(existingChildLocator=existingStudent.locator)
 
                     
@@ -66,6 +71,7 @@ class ScreeningWorkflow:
                         self.report_creator.add_success(existingStudentResult)
                 elif existingStudent.found == False:
                     logging.info(f"🎉🎉 Child with {child.name} saved.")
+                    self.logger(f"🎉🎉 Child with {child.name} saved.",LogType.INFO)
                     newStudentResult = screening.submit()
                     if newStudentResult.feedback.outcome is not FeedbackOutcome.SUCCESS:
                         self.report_creator.add_failure(newStudentResult)
@@ -75,6 +81,7 @@ class ScreeningWorkflow:
                     ## We are making duplicate copy
                     self.report_creator.add_failure(ChildRunResult(child=child,child_type=ChildType.EXISTING_CHILD,feedback=FeedbackResult(outcome=FeedbackOutcome.DUPLICATE,message="This child is already present")))
                     logging.info(f"Child : {child.name} is already screened. So just moving forward")
+                    self.logger(f"Child : {child.name} is already screened. So just moving forward",LogType.INFO)
                     SearchStudent.clear_search_text(page=self.page)
                     continue
 
@@ -85,6 +92,7 @@ class ScreeningWorkflow:
                 logging.exception(
                     f"Failed to add child: {child.name}"
                 )
+                self.logger(f"Failed to add child: {child.name}",LogType.ERROR)
                 result = ChildRunResult(
                     child=child,
                     feedback=FeedbackResult(
@@ -99,7 +107,8 @@ class ScreeningWorkflow:
         
         ## Let's enter the existing child, that are not present in dataset given
         logging.info("📢📢📢📢📢📢📢📢📢📢 Starting with Existing children📢📢📢📢📢📢📢📢📢📢📢📢📢📢📢📢")
-        scanner = ExistingChildScanner(page=self.page, is_awc_screening= self.institution_type == "awc", class_range= self.class_range)
+        self.logger("Starting with Existing children",LogType.INFO)
+        scanner = ExistingChildScanner(page=self.page, is_awc_screening= self.institution_type == InstitutionType.AWC, class_range= self.class_range)
         total_existing = scanner.get_total_existing_student()
 
         existing_limit = min(
@@ -108,6 +117,7 @@ class ScreeningWorkflow:
         )
         existing_children_count_manager = DiseaseCountFactory().create(max_len=existing_limit)
         logging.info(f"Got existing disease manager max as : {existing_children_count_manager.get_max_counts()}")
+        self.logger(f"Got existing disease manager max as : {existing_children_count_manager.get_max_counts()}",LogType.INFO)
         try:
             existingChildrenWithoutData = ExistingChildrenWithoutData(mobileNumber=defaultContactNum, page=self.page, address=address, job_id=self.job_id,synchronizer=self.synchronizer, count_manager=existing_children_count_manager,selected_mapping=self.selected_mapping, institution_type=self.institution_type, max_children_count=existing_limit, class_range=self.class_range, existing_limit=existing_limit)
             non_data_existing_children_results = existingChildrenWithoutData.addExistingChildren()

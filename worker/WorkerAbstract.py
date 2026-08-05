@@ -75,7 +75,7 @@ class WorkerAbstract(ABC):
         """
         message = self.mail_box.receive()
         if message.job_id != self.job_id:
-            raise Exception("Invalid job_id for this worker")
+            raise Exception(f"Invalid job_id for this worker. Got job id from message as {message.job_id}, and worker is created with jobId as {self.job_id}")
         self._process_command(message=message)
 
     def run(self):

@@ -10,6 +10,7 @@ from services.RuntimeManager import RunTimeManager
 from services.ReportCreator import ReportCreator
 from worker.WorkerAbstract import WorkerAbstract
 from all_models.InstitutionData import InstitutionData
+from services.ScreeningLogCreator import ScreeningLogCreator
 
 import logging
 
@@ -20,6 +21,7 @@ class ScreeningWorker(WorkerAbstract):
     def __init__(self, job_id, worker_context):
         super().__init__(job_id, worker_context)
         self.report_creator = ReportCreator(job_id=job_id)
+        self.log_creator = ScreeningLogCreator(job_id=job_id)
         self.page: Page = None
         self.browser: Browser = None
         self.context: BrowserContext = None
@@ -56,7 +58,7 @@ class ScreeningWorker(WorkerAbstract):
         runtimeManger = RunTimeManager(job_id=self.job_id, logger=self.log)
 
         ## Step 1 launch the browser
-        print(f"Job is created for id: {self.job_id}")
+        # print(f"Job is created for id: {self.job_id}")
         runtime_job = runtimeManger.launch_browser_instance()
         self.job_state = JobStatus.STARTING
         self.page = runtime_job.page
@@ -89,7 +91,8 @@ class ScreeningWorker(WorkerAbstract):
         runtimeManger.start_child_screening(page=self.page, institution_data=institution_data, is_ANM_Present=is_ANM_Present,screening_date=screening_date,uploaded_file_url=uploaded_file_url,address=address,mobile_number=mobile_number,report_creator=self.report_creator,selected_mapping=selected_facility, class_range=class_range, existing_limit=existing_limit)
 
         report_files = self.report_creator.flush()
-        self._emit_event(Events.REPORT_CREATED,payload={"report_files":report_files})
+        log_file = self.log_creator.flush()
+        self._emit_event(Events.REPORT_CREATED,payload={"report_files":report_files, "log_file": log_file})
     
     def _process_command(self, message):
         if message.command == Commands.START_SCREENING:

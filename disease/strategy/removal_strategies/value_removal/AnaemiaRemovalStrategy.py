@@ -14,13 +14,13 @@ class AnaemiaRemovalStrategy(ValueRemovalStrategy):
         current_hb = manipulator.get_hb()
         if not current_hb:
             raise ValueError('Invalid hb is given')
-        return current_hb > 12
+        return current_hb >= 13
     
     def adjust_value(self, manipulator:DiseaseManipulator):
         """
         Just set a random value between 12-14
         """
-        currected_hb = round(random.uniform(12, 14), 1)
+        currected_hb = round(random.uniform(13, 14), 1)
         manipulator.set_hb(str(currected_hb))
         
         

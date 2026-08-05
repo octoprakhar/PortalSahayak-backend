@@ -22,14 +22,15 @@ class WebsocketListner(EventListnerAbstract):
 
         if event.event == Events.LOG_MESSAGE:
 
-            payload = {
-                "event": event.event.value,
-                "payload": {
-                    "message": event.payload['message'],
-                    "logType": event.payload["logType"].value,
-                },
-            }
-            self.event_bridge.dispatch(coroutine=self.websocket_manager.send(user_id=self.user_id,payload=payload))
+            # payload = {
+            #     "event": event.event.value,
+            #     "payload": {
+            #         "message": event.payload['message'],
+            #         "logType": event.payload["logType"].value,
+            #     },
+            # }
+            # self.event_bridge.dispatch(coroutine=self.websocket_manager.send(user_id=self.user_id,payload=payload))
+            pass
 
         if event.event == Events.WORKER_STARTED:
             payload = {

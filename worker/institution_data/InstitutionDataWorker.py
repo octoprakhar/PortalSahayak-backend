@@ -42,14 +42,14 @@ class InstitutionDataWorker(WorkerAbstract):
         self.browser = runtime_job.browser
         self.context = runtime_job.context
         self.playwright = runtime_job.playwright
-        self._emit_event(Events.WORKER_STARTED)
+        # self._emit_event(Events.WORKER_STARTED)
 
         
 
         userName = self.worker_context.userName
         password = self.worker_context.password
         runtimeManger.login_user(self.page, userName=userName, password=password)
-        self._emit_event(Events.LOGIN_COMPLETED)
+        # self._emit_event(Events.LOGIN_COMPLETED)
 
 
 

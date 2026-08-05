@@ -14,3 +14,10 @@ class ReportRepository(ABC):
         It will create the report row, with success and falure files path, and returns report_id
         """
         pass
+
+    @abstractmethod
+    def update_log_path(self, report_id: str, local_log_file: str, remote_path: str) -> str:
+        """
+        It will update the log file path for the specific row
+        """
+        pass

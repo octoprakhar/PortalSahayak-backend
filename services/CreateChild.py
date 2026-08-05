@@ -33,7 +33,7 @@ class ChildFactory:
         """
         It gives hb in range of 10 to 14
         """
-        return round(random.uniform(12, 14), 1) 
+        return round(random.uniform(13, 14), 1) 
 
     def _getFacilityTypeAndName(self) -> tuple[str,str]:
         """

@@ -183,7 +183,7 @@ class RunTimeManager:
         ## Start Screening Workflow with all the data
         try:
             
-            screeningWorkFLow: ScreeningWorkflow = ScreeningWorkflow(page=page,job_id=self.job_id,synchronizer=self.synchronizer,report_creator=report_creator,selected_mapping=selected_mapping, institution_type=institution_data.institution_type, class_range=class_range, existing_limit=existing_limit)
+            screeningWorkFLow: ScreeningWorkflow = ScreeningWorkflow(page=page,job_id=self.job_id,synchronizer=self.synchronizer,report_creator=report_creator,selected_mapping=selected_mapping, institution_type=institution_data.institution_type, class_range=class_range, existing_limit=existing_limit,logger=self.logger)
         
             screeningWorkFLow.run(uploaded_file_url,mobile_number,address)
             self.logger("Completed the JOB Succesfully 🎉🎉🎉🎉.",LogType.SUCCESS)

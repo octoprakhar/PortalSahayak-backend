@@ -11,6 +11,9 @@ from constants.job_status import JobStatus
 from repository.UserRepository import UserRepository
 from repository.JobRepository import JobRepository
 from repository.ReportRepository import ReportRepository
+from services.ScreeningLogCreator import ScreeningLogCreator
+
+from constants.log_type import LogType
 
 
 class PersistenceListener(EventListnerAbstract):
@@ -26,9 +29,15 @@ class PersistenceListener(EventListnerAbstract):
         self.report_repository = reportRepository
         self.user_id = user_id
         self.job_id = job_id
+        self.log_creator = ScreeningLogCreator(job_id=user_id if not job_id else job_id)
+
 
     def _update_job_status(self, newStatus: JobStatus, job_id: str):
         self.job_repository.update_job_status(job_id=job_id, new_status=newStatus)
+
+    def _add_log(self, message:str, type: LogType):
+        self.log_creator.append_log(log_type=type, message=message)
+
 
 
     def handle(self, event:WorkerEvent):
@@ -40,7 +49,7 @@ class PersistenceListener(EventListnerAbstract):
             logType = payload["logType"]
 
 
-            # self._add_log(message=message,type=logType,job_id=job_id)
+            self._add_log(message=message, type=logType)
             pass
 
         if event.event == Events.WORKER_STARTED:
@@ -86,9 +95,14 @@ class PersistenceListener(EventListnerAbstract):
             ## Start getting the report
             payload = event.payload
             report_files: ReportFiles = payload.get("report_files")
+            log_file: str = payload.get("log_file")
             success_file_remote_path = f"/{self.job_id}/reports/success.csv"
             failure_file_remote_path = f"/{self.job_id}/reports/failure.csv"
-            self.report_repository.create(job_report=JobReport(success_file_remote_path=success_file_remote_path, failure_file_remote_path=failure_file_remote_path, user_id=self.user_id, job_id=self.job_id),local_temp_file=report_files)
+            log_file_remote_path = f"/{self.job_id}/logs/screening_log.json"
+            report_id = self.report_repository.create(job_report=JobReport(success_file_remote_path=success_file_remote_path, failure_file_remote_path=failure_file_remote_path, user_id=self.user_id, job_id=self.job_id),local_temp_file=report_files)
+
+            ## Now update log 
+            self.report_repository.update_log_path(report_id=report_id,local_log_file=log_file, remote_path=log_file_remote_path)
 
             self._update_job_status(newStatus=JobStatus.COMPLETED, job_id=event.job_id)
 

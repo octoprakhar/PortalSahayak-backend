@@ -36,3 +36,25 @@ class DatabaseReportRepository(ReportRepository):
             raise Exception("Failed to create report row.")
         
         return response.data[0]["report_id"]
+
+    def update_log_path(self, report_id: str, local_log_file, remote_path):
+         # Upload the log file
+        uploaded_path = self.storage.upload(
+            bucket_name="screening-data",
+            local_file=local_log_file,
+            remote_path=remote_path,
+        )
+
+        # Update the database
+        response = (
+            self.db.client
+            .table("Job_Report")
+            .update({"job_log_path": uploaded_path})
+            .eq("report_id", report_id)
+            .execute()
+        )
+
+        if not response.data:
+            raise Exception("Failed to update job log path.")
+
+        return uploaded_path
