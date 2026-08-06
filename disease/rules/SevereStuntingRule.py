@@ -1,5 +1,6 @@
 from disease.rules.DiseaseRule import DiseaseRule
 from utils.loaderUtils import get_age
+from constants.institution_type import InstitutionType
 
 
 class SevereStuntingRule(DiseaseRule):
@@ -15,4 +16,4 @@ class SevereStuntingRule(DiseaseRule):
 
         is_current_count_less = current < max_count
 
-        return not child_disease.strip() and is_current_count_less and age < 6
+        return not child_disease.strip() and is_current_count_less and context.institution_type != InstitutionType.SCHOOL
