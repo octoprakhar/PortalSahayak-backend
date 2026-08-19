@@ -41,7 +41,7 @@ class RunTimeManager:
         
         ## Launching the broswer instance, and then storing it in active jobs memory
         p = sync_playwright().start()
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=False)
         context = browser.new_context()
         page = context.new_page()
         page.goto("https://rbsk.mohfw.gov.in/RBSK/login")
