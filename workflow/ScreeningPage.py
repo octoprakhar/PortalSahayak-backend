@@ -192,10 +192,10 @@ class ChildScreeningPage:
 
         button_name = (
             "Add New Child"
-            if self.institution_type == InstitutionType.AWC.value
+            if self.institution_type == InstitutionType.AWC
             else "Add New Student"
         )
-        # print(f"Got institution Type as {institution_data.institution_type}")
+        logging.info(f"Got institution Type as {self.institution_type}, and of type {type(self.institution_type)}")
         buttons = self.page.get_by_role("button", name=button_name)
         buttons.first.click()
 
