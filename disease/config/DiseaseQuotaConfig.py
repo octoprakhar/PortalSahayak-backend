@@ -6,12 +6,22 @@ class DiseaseQuotaConfig:
     QUOTAS = {
         "SAM/Severe Thinness/SUW": 0.02,
         "Referactive Problems": 0,
-        "Mild Anaemia": 0.20,
-        "Moderate Anaemia": 0.25,
+        "Mild Anaemia": 0.10,
+        "Moderate Anaemia": 0.10,
         "Severe Stunting": 0.03,
         "Skin Conditions": 0,
         "Dental Conditions": 0,
     }
+
+    # QUOTAS = {
+    #         "SAM/Severe Thinness/SUW": 0.00,
+    #         "Referactive Problems": 0,
+    #         "Mild Anaemia": 0.00,
+    #         "Moderate Anaemia": 0.00,
+    #         "Severe Stunting": 0.00,
+    #         "Skin Conditions": 0,
+    #         "Dental Conditions": 0,
+    #     }
 
     # QUOTAS = {
     #     "SAM/Severe Thinness/SUW": 0.02,

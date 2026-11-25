@@ -30,7 +30,7 @@ ws_manager = WebsocketManger()
 
 @router.get("/health")
 async def get_users():
-    return {"status": "ok"}
+    return {"status": "ok we are running the api. Hello"}
 
 @router.post("/register-user")
 async def register_job(

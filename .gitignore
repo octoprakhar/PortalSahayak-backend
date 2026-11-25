@@ -1,6 +1,7 @@
 __pycache__
 .vscode
 .env
+invalid_student_data.xlsx
 venv/
 jobs/
 .pytest_cache

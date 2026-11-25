@@ -1,4 +1,4 @@
-from playwright.sync_api import Page, Locator
+from playwright.sync_api import Page, Locator, TimeoutError as PlaywrightTimeoutError
 import logging
 from typing import Callable
 from all_models.FeedbackResult import FeedbackResult,FeedbackOutcome
@@ -17,8 +17,15 @@ class LoginPage:
 
 
     def _fill_captcha(self):
-        captcha = self.page.locator("span.select-none").inner_text()
-
+        # Use JavaScript evaluation to safely extract textContent from each SVG <text> element
+        captcha_chars = self.page.locator("div.select-none svg text").evaluate_all(
+            "elements => elements.map(el => el.textContent.trim())"
+        )
+    
+        # Combine the characters into a single string (e.g., "96XZN")
+        captcha = "".join(filter(None, captcha_chars))
+    
+        # Fill the captcha input field
         self.page.get_by_placeholder("Captcha").fill(captcha)
 
     def _get_login_response(self) -> dict:
@@ -31,6 +38,16 @@ class LoginPage:
                 and response.request.method == "POST"
         ) as response_info:
             login_btn.click()
+
+            terminate_btn = self.page.get_by_role(
+                "button", name="Terminate & Login"
+            )
+
+            try:
+                terminate_btn.wait_for(state="visible", timeout=5000)
+                terminate_btn.click()
+            except PlaywrightTimeoutError:
+                logging.info("No active session popup detected.")
         
         response = response_info.value
 
